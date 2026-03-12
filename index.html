@@ -1,1 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#faf8f5">
+<title>My Planner ✨</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════ */
+:root {
+  --bg: #faf8f5;
+  --surface: #ffffff;
+  --surface2: #f7f4f0;
+  --border: #ede8e1;
+  --ink: #2d2520;
+  --muted: #9b8b80;
+  --rose: #e8a0a0;
+  --rose-soft: #fdf0f0;
+  --sage: #a8c4b0;
+  --sage-soft: #f0f7f2;
+  --lav: #c4b0d8;
+  --lav-soft: #f5f0fc;
+  --peach: #f0c4a0;
+  --peach-soft: #fef8f2;
+  --sky: #a0c4e8;
+  --sky-soft: #f0f7fe;
+  --gold: #d4b870;
+  --gold-soft: #fdf8ec;
+  --r: 14px;
+  --nav-h: 56px;
+  --tab-h: 52px;
+}
 
+/* ══════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+body {
+  font-family:'Nunito',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+  min-height:100dvh;
+  overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse at 15% 10%,rgba(232,160,160,.1) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 90%,rgba(168,196,176,.1) 0%,transparent 55%);
+}
+button { font-family:inherit; cursor:pointer; }
+textarea, input, select { font-family:inherit; }
+
+/* ══════════════════════════════════════
+   LAYOUT — DESKTOP vs MOBILE
+   Desktop: sidebar nav + main panel (>768px)
+   Mobile:  bottom tab bar + stacked views
+══════════════════════════════════════ */
+
+/* DESKTOP SHELL */
+.desktop-shell {
+  display:none;
+  height:100vh;
+  grid-template-columns:240px 1fr;
+  grid-template-rows:1fr;
+}
+.sidebar {
+  border-right:1px solid var(--border);
+  background:var(--surface);
+  display:flex;
+  flex-direction:column;
+  padding:24px 0 16px;
+  overflow-y:auto;
+}
+.sidebar-logo {
+  padding:0 20px 20px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:12px;
+}
+.sidebar-logo h1 {
+  font-family:'Playfair Display',serif;
+  font-size:1.3rem;
+  font-weight:700;
+}
+.sidebar-logo p { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+.sidebar-nav { flex:1; padding:0 8px; }
+.sidebar-link {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px;
+  border-radius:10px;
+  font-size:0.85rem; font-weight:600;
+  color:var(--muted);
+  background:none; border:none;
+  width:100%; text-align:left;
+  transition:all .2s;
+  margin-bottom:2px;
+}
+.sidebar-link:hover { background:var(--surface2); color:var(--ink); }
+.sidebar-link.active { background:var(--rose-soft); color:var(--ink); }
+.sidebar-link .nav-icon { font-size:1.1rem; width:22px; text-align:center; }
+.sidebar-ai-btn {
+  margin:12px 8px 0;
+  padding:12px;
+  background:linear-gradient(135deg,var(--rose-soft),var(--lav-soft));
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  font-size:0.82rem; font-weight:600;
+  color:var(--ink);
+  width:calc(100% - 16px);
+  text-align:center;
+  cursor:pointer; transition:all .2s;
+}
+.sidebar-ai-btn:hover { border-color:var(--lav); }
+.desktop-main {
+  overflow-y:auto;
+  background:var(--bg);
+}
+
+/* MOBILE SHELL */
+.mobile-shell {
+  display:flex;
+  flex-direction:column;
+  min-height:100dvh;
+}
+.mobile-content {
+  flex:1;
+  overflow-y:auto;
+  padding-bottom:calc(var(--tab-h) + 16px);
+}
+.mobile-topbar {
+  position:sticky; top:0; z-index:100;
+  background:rgba(250,248,245,.95);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 16px;
+  height:var(--nav-h);
+  display:flex; align-items:center; gap:10px;
+}
+.mobile-topbar-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.05rem; font-weight:700;
+  flex:1;
+}
+.mobile-topbar-back {
+  background:none; border:none;
+  font-size:1.1rem; color:var(--muted);
+  padding:4px 6px; border-radius:8px;
+  transition:all .15s;
+}
+.mobile-topbar-back:hover { background:var(--border); }
+.mobile-bottom-tabs {
+  position:fixed; bottom:0; left:0; right:0;
+  height:var(--tab-h);
+  background:rgba(255,255,255,.97);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--border);
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.m-tab {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:3px; background:none; border:none;
+  font-size:0.6rem; font-weight:700;
+  color:var(--muted); transition:all .15s;
+  padding:6px 0;
+}
+.m-tab .m-tab-icon { font-size:1.35rem; line-height:1; }
+.m-tab.active { color:var(--rose); }
+
+/* ══════════════════════════════════════
+   SHARED VIEW STYLES
+══════════════════════════════════════ */
+.view { display:none; }
+.view.active { display:block; animation:fadeUp .18s ease; }
+@keyframes fadeUp {
+  from{opacity:0;transform:translateY(8px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ══════════════════════════════════════
+   BATTERY BAR
+══════════════════════════════════════ */
+.battery-bar {
+  position:sticky; top:var(--nav-h); z-index:99;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:7px 16px;
+  display:flex; align-items:center; gap:10px;
+}
+.battery-bar.desktop-top { top:0; }
+.bat-shell {
+  flex:1; height:16px;
+  background:var(--surface2);
+  border-radius:8px;
+  border:1.5px solid var(--border);
+  overflow:hidden;
+}
+.bat-fill {
+  height:100%; border-radius:8px;
+  background:linear-gradient(90deg,var(--rose),var(--lav),var(--sage));
+  transition:width .8s cubic-bezier(.34,1.56,.64,1);
+  width:0%;
+  position:relative;
+}
+.bat-fill::after {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.3) 0%,transparent 60%);
+}
+.bat-nub { width:5px; height:9px; background:var(--border); border-radius:0 2px 2px 0; flex-shrink:0; }
+.bat-pct { font-size:0.72rem; font-weight:700; color:var(--muted); min-width:32px; }
+
+/* ══════════════════════════════════════
+   MONTHLY CALENDAR
+══════════════════════════════════════ */
+.month-header {
+  padding:20px 16px 12px;
+  display:flex; align-items:center; gap:10px;
+}
+.month-title { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:700; flex:1; }
+.month-nav button {
+  width:32px; height:32px; border-radius:9px;
+  border:1.5px solid var(--border); background:var(--surface);
+  font-size:1rem; display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.month-nav button:hover { background:var(--border); }
+.cal-dow {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  padding:0 16px; gap:3px; margin-bottom:3px;
+}
+.cal-dow div { text-align:center; font-size:.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; padding:5px 0; }
+.cal-grid {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  padding:0 16px 20px; gap:3px;
+}
+.cal-cell {
+  border-radius:10px; padding:5px 4px;
+  cursor:pointer; min-height:46px;
+  display:flex; flex-direction:column;
+  border:1.5px solid transparent;
+  transition:all .18s; position:relative;
+}
+.cal-cell:hover { background:var(--surface); border-color:var(--border); }
+.cal-cell.other-month { opacity:.3; pointer-events:none; }
+.cal-cell.today { background:var(--rose-soft); border-color:var(--rose); }
+.cal-cell.has-week { background:var(--surface); border-color:var(--border); }
+.cal-cell.cur-week { background:var(--lav-soft); border-color:var(--lav); }
+.cal-cell.shabbat-day { background:var(--gold-soft); }
+.cal-cell.holiday-day { border-color:var(--sage); }
+.cal-date { font-size:.75rem; font-weight:700; line-height:1; }
+.cal-cell.today .cal-date {
+  background:var(--rose); color:#fff;
+  width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.7rem;
+}
+.cal-evt {
+  font-size:.56rem; font-weight:700;
+  border-radius:3px; padding:1px 3px;
+  margin-top:2px; overflow:hidden;
+  white-space:nowrap; text-overflow:ellipsis;
+  max-width:100%;
+}
+.cal-evt.holiday { background:var(--sage); color:#fff; }
+.cal-evt.test { background:var(--rose); color:#fff; }
+.cal-evt.appointment { background:var(--sky); color:#fff; }
+.cal-evt.social { background:var(--peach); color:#7a4a10; }
+.cal-evt.other { background:var(--lav); color:#fff; }
+
+/* ══════════════════════════════════════
+   WEEK / DAY VIEW
+══════════════════════════════════════ */
+.day-tabs-row {
+  display:flex; gap:5px;
+  padding:8px 16px 10px;
+  overflow-x:auto; scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.day-tabs-row::-webkit-scrollbar { display:none; }
+.dtab {
+  padding:7px 13px; border-radius:18px;
+  font-size:.78rem; font-weight:600;
+  border:1.5px solid var(--border);
+  background:var(--surface);
+  color:var(--muted); white-space:nowrap;
+  transition:all .2s; flex-shrink:0;
+}
+.dtab:hover { border-color:var(--rose); color:var(--ink); }
+.dtab.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+.dtab.shab { border-color:var(--gold); }
+.dtab.shab.active { background:var(--gold); border-color:var(--gold); }
+
+.day-panel { display:none; padding:0 16px 24px; }
+.day-panel.active { display:block; }
+
+/* Quote */
+.quote-card {
+  background:linear-gradient(135deg,var(--rose-soft),var(--lav-soft));
+  border:1.5px solid var(--border); border-radius:var(--r);
+  padding:13px 16px; margin-bottom:12px;
+  font-family:'Playfair Display',serif;
+  font-size:.9rem; font-style:italic;
+  color:var(--muted); text-align:center; line-height:1.6;
+}
+
+/* Sections */
+.section-card {
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:13px 15px;
+  margin-bottom:10px;
+}
+.sec-title {
+  font-size:.82rem; font-weight:700;
+  margin-bottom:9px;
+  display:flex; align-items:center; gap:7px;
+}
+.sec-sub { font-size:.74rem; color:var(--muted); margin-bottom:8px; line-height:1.5; }
+
+/* Blocks */
+.block-list { display:flex; flex-direction:column; gap:7px; margin-bottom:10px; }
+.blk {
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:11px 14px;
+  display:grid;
+  grid-template-columns:68px 1fr;
+  gap:9px;
+  position:relative; overflow:hidden;
+}
+.blk::before {
+  content:''; position:absolute;
+  left:0; top:0; bottom:0; width:4px;
+}
+.blk.cat-math::before { background:var(--rose); }
+.blk.cat-hw::before { background:var(--sage); }
+.blk.cat-free::before { background:var(--peach); }
+.blk.cat-wind::before { background:var(--lav); }
+.blk.cat-routine::before { background:var(--sky); }
+.blk.cat-shabbat::before { background:var(--gold); }
+.blk.cat-sleep::before { background:#c8c0b8; }
+.blk.cat-specialist::before { background:linear-gradient(180deg,var(--rose),var(--lav)); }
+.blk-time { font-size:.7rem; font-weight:700; color:var(--muted); padding-top:2px; line-height:1.4; }
+.blk-title { font-size:.85rem; font-weight:700; margin-bottom:3px; }
+.blk-desc { font-size:.76rem; color:var(--muted); line-height:1.5; }
+.blk-tag {
+  display:inline-block; font-size:.64rem; font-weight:700;
+  padding:2px 7px; border-radius:7px; margin-top:4px;
+}
+.tag-math { background:var(--rose-soft); color:#c05050; }
+.tag-hw { background:var(--sage-soft); color:#3d7a52; }
+.tag-free { background:var(--peach-soft); color:#b07030; }
+.tag-wind { background:var(--lav-soft); color:#7050a0; }
+.tag-routine { background:var(--sky-soft); color:#3060a0; }
+.tag-shabbat { background:var(--gold-soft); color:#8a6a10; }
+.tag-sleep { background:#f0eeec; color:#808080; }
+
+/* Goals */
+.goal-item {
+  display:flex; align-items:flex-start; gap:9px;
+  padding:6px 0;
+  border-bottom:1px solid var(--border);
+  font-size:.82rem; line-height:1.5;
+}
+.goal-item:last-child { border-bottom:none; }
+.g-check {
+  width:18px; height:18px; border-radius:5px;
+  border:2px solid var(--border);
+  background:var(--surface2); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.72rem; flex-shrink:0; margin-top:1px;
+  transition:all .2s;
+}
+.g-check.on { background:var(--rose); border-color:var(--rose); color:#fff; }
+.g-label { flex:1; cursor:pointer; }
+.g-label.done { text-decoration:line-through; color:var(--muted); }
+
+/* Self-grade */
+.star-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.star-label { font-size:.75rem; font-weight:600; color:var(--muted); min-width:110px; }
+.star { font-size:1.1rem; cursor:pointer; opacity:.25; transition:all .15s; background:none; border:none; }
+.star:hover { transform:scale(1.2); }
+.star.on { opacity:1; }
+.timer-row { display:flex; align-items:center; gap:8px; margin:6px 0; }
+.timer-disp { font-family:'Playfair Display',serif; font-size:1.35rem; font-weight:700; min-width:60px; }
+.sm-btn {
+  padding:5px 14px; border-radius:16px;
+  border:1.5px solid var(--border);
+  background:var(--surface2); font-size:.76rem; font-weight:700;
+  transition:all .2s;
+}
+.sm-btn:hover { background:var(--ink); color:#fff; border-color:var(--ink); }
+.sm-btn.running { background:var(--rose); color:#fff; border-color:var(--rose); }
+
+/* Inputs */
+.note-area {
+  width:100%; padding:8px 10px;
+  border:1.5px solid var(--border); border-radius:9px;
+  font-size:.8rem; color:var(--ink);
+  background:var(--surface2); resize:vertical; outline:none;
+  transition:border-color .2s; line-height:1.6;
+}
+.note-area:focus { border-color:var(--rose); }
+.note-area::placeholder { color:#ccc; }
+.add-row { display:flex; gap:6px; margin-top:7px; }
+.add-input {
+  flex:1; padding:7px 10px;
+  border:1.5px solid var(--border); border-radius:8px;
+  font-size:.78rem; outline:none;
+  background:var(--surface2); transition:border-color .2s;
+}
+.add-input:focus { border-color:var(--rose); }
+.add-btn {
+  padding:7px 12px; border-radius:8px;
+  border:1.5px solid var(--border);
+  background:var(--surface2); font-size:.76rem; font-weight:700;
+  transition:all .2s;
+}
+.add-btn:hover { background:var(--rose); color:#fff; border-color:var(--rose); }
+
+/* Assign item */
+.assign-item {
+  display:flex; align-items:flex-start; gap:9px;
+  padding:6px 0; border-bottom:1px solid var(--border);
+  font-size:.8rem; line-height:1.5;
+}
+.assign-item:last-child { border-bottom:none; }
+.a-check {
+  width:17px; height:17px; border-radius:5px;
+  border:2px solid var(--border); background:var(--surface2);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:.68rem; flex-shrink:0;
+  margin-top:1px; transition:all .2s;
+}
+.a-check.on { background:var(--sage); border-color:var(--sage); color:#fff; }
+.a-txt { flex:1; }
+.a-txt.done { text-decoration:line-through; color:var(--muted); }
+.empty-msg { font-size:.76rem; color:var(--muted); padding:4px 0; }
+
+/* Vault */
+.vault-entry {
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:var(--r); padding:13px 15px; margin-bottom:9px;
+}
+.vault-label { font-size:.68rem; font-weight:700; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.05em; }
+.vault-text { font-size:.8rem; line-height:1.6; color:var(--ink); white-space:pre-wrap; }
+.vault-empty { text-align:center; padding:40px 20px; color:var(--muted); font-size:.85rem; }
+
+/* ══════════════════════════════════════
+   ADD EVENT MODAL
+══════════════════════════════════════ */
+.overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(45,37,32,.45);
+  backdrop-filter:blur(4px);
+  z-index:200; align-items:flex-end; justify-content:center;
+}
+.overlay.open { display:flex; }
+@media(min-width:769px){ .overlay { align-items:center; } }
+.modal-sheet {
+  background:var(--surface);
+  width:min(440px,100%);
+  border-radius:20px 20px 0 0;
+  padding:20px 20px 32px;
+  animation:slideUp .25s cubic-bezier(.34,1.56,.64,1);
+}
+@media(min-width:769px){
+  .modal-sheet { border-radius:20px; padding:24px; animation:popIn .22s cubic-bezier(.34,1.56,.64,1); }
+}
+@keyframes slideUp { from{transform:translateY(100%);} to{transform:translateY(0);} }
+@keyframes popIn { from{transform:scale(.88);opacity:0;} to{transform:scale(1);opacity:1;} }
+.modal-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 16px; }
+@media(min-width:769px){ .modal-handle { display:none; } }
+.modal h3 { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; margin-bottom:14px; }
+.mfield { margin-bottom:11px; }
+.mfield label { display:block; font-size:.74rem; font-weight:700; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em; }
+.mfield input, .mfield select {
+  width:100%; padding:9px 11px;
+  border:1.5px solid var(--border); border-radius:9px;
+  font-size:.84rem; outline:none;
+  background:var(--surface2); transition:border-color .2s;
+}
+.mfield input:focus, .mfield select:focus { border-color:var(--rose); }
+.modal-btns { display:flex; gap:8px; margin-top:14px; }
+.btn-pri { flex:1; padding:11px; background:var(--ink); color:#fff; border:none; border-radius:10px; font-size:.84rem; font-weight:700; transition:all .2s; }
+.btn-pri:hover { background:#1a0f0a; }
+.btn-sec { padding:11px 16px; background:var(--surface2); color:var(--ink); border:1.5px solid var(--border); border-radius:10px; font-size:.84rem; font-weight:600; transition:all .2s; }
+.btn-sec:hover { background:var(--border); }
+
+/* ══════════════════════════════════════
+   FAB
+══════════════════════════════════════ */
+.fab {
+  position:fixed; bottom:calc(var(--tab-h) + 16px); right:16px;
+  width:50px; height:50px;
+  background:var(--ink); color:#fff; border:none;
+  border-radius:50%; font-size:1.4rem;
+  box-shadow:0 4px 18px rgba(45,37,32,.22);
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s; z-index:150;
+}
+.fab:hover { transform:scale(1.08); }
+.fab.desktop { bottom:24px; right:24px; }
+@media(min-width:769px){ .fab { bottom:24px; } }
+
+/* ══════════════════════════════════════
+   AI CHAT — MOBILE (bottom sheet)
+══════════════════════════════════════ */
+.ai-sheet-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(45,37,32,.3);
+  backdrop-filter:blur(3px);
+  z-index:190;
+}
+.ai-sheet-overlay.open { display:block; }
+.ai-sheet {
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--surface);
+  border-radius:20px 20px 0 0;
+  z-index:195;
+  display:flex; flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.34,1,.64,1);
+  max-height:80dvh;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.ai-sheet.open { transform:translateY(0); }
+
+/* AI CHAT — DESKTOP (floating panel right side) */
+.ai-float {
+  position:fixed; bottom:24px; right:24px;
+  width:340px;
+  background:var(--surface);
+  border-radius:18px;
+  border:1.5px solid var(--border);
+  box-shadow:0 8px 36px rgba(45,37,32,.16);
+  z-index:190;
+  display:flex; flex-direction:column;
+  transform:scale(.88) translateY(16px);
+  opacity:0; pointer-events:none;
+  transition:all .25s cubic-bezier(.34,1.56,.64,.9);
+  max-height:72vh;
+}
+.ai-float.open { transform:scale(1) translateY(0); opacity:1; pointer-events:all; }
+
+/* Shared AI styles */
+.ai-header {
+  padding:13px 15px 11px;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:9px;
+  flex-shrink:0;
+}
+.ai-handle { width:32px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 10px; }
+@media(min-width:769px){ .ai-handle { display:none; } }
+.ai-ava {
+  width:30px; height:30px; border-radius:50%;
+  background:linear-gradient(135deg,var(--rose),var(--lav));
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; flex-shrink:0;
+}
+.ai-name { font-family:'Playfair Display',serif; font-size:.92rem; font-weight:700; flex:1; }
+.ai-sub { font-size:.68rem; color:var(--muted); }
+.ai-x { background:none; border:none; font-size:1rem; color:var(--muted); padding:3px 7px; border-radius:6px; transition:all .15s; }
+.ai-x:hover { background:var(--border); }
+.ai-msgs {
+  flex:1; overflow-y:auto;
+  padding:11px 13px;
+  display:flex; flex-direction:column;
+  gap:9px;
+  min-height:140px; max-height:360px;
+}
+.ai-msgs::-webkit-scrollbar { width:4px; }
+.ai-msgs::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.ai-msg { display:flex; gap:7px; align-items:flex-start; animation:msgIn .18s ease; }
+@keyframes msgIn { from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:translateY(0);} }
+.ai-msg.user { flex-direction:row-reverse; }
+.ai-bubble-msg {
+  max-width:83%; padding:8px 12px;
+  border-radius:15px; font-size:.8rem; line-height:1.55;
+}
+.ai-msg.assistant .ai-bubble-msg {
+  background:var(--lav-soft); border:1px solid rgba(196,176,216,.35);
+  border-bottom-left-radius:4px;
+}
+.ai-msg.user .ai-bubble-msg {
+  background:linear-gradient(135deg,var(--rose),var(--lav));
+  color:#fff; border-bottom-right-radius:4px;
+}
+.ai-typing-wrap { display:flex; gap:4px; align-items:center; padding:2px 0; }
+.ai-dot { width:6px; height:6px; border-radius:50%; background:var(--lav); animation:dotBounce 1.2s ease-in-out infinite; }
+.ai-dot:nth-child(2){ animation-delay:.2s; }
+.ai-dot:nth-child(3){ animation-delay:.4s; }
+@keyframes dotBounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-5px);} }
+.ai-input-bar {
+  padding:9px 11px;
+  border-top:1px solid var(--border);
+  display:flex; gap:7px; align-items:flex-end;
+  flex-shrink:0;
+}
+.ai-txt {
+  flex:1; padding:8px 11px;
+  border:1.5px solid var(--border); border-radius:11px;
+  font-size:.8rem; outline:none; resize:none;
+  background:var(--surface2); max-height:70px;
+  overflow-y:auto; line-height:1.4;
+  transition:border-color .2s;
+}
+.ai-txt:focus { border-color:var(--lav); }
+.ai-send {
+  width:34px; height:34px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,var(--rose),var(--lav));
+  color:#fff; font-size:.95rem;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s; flex-shrink:0;
+}
+.ai-send:hover { transform:scale(1.08); }
+.ai-send:disabled { opacity:.5; transform:none; }
+.ai-mic {
+  width:34px; height:34px; border-radius:50%;
+  border:1.5px solid var(--border); background:var(--surface2);
+  font-size:.9rem; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all .2s;
+}
+.ai-mic:hover { border-color:var(--rose); }
+.ai-mic.live { background:var(--rose-soft); border-color:var(--rose); animation:micPulse .8s ease-in-out infinite; }
+@keyframes micPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+
+/* AI trigger buttons */
+.ai-fab-mobile {
+  position:fixed; bottom:calc(var(--tab-h) + 72px); right:16px;
+  width:48px; height:48px;
+  background:linear-gradient(135deg,var(--rose),var(--lav));
+  border:none; border-radius:50%; font-size:1.2rem;
+  box-shadow:0 4px 18px rgba(196,176,216,.5);
+  display:flex; align-items:center; justify-content:center;
+  z-index:150; animation:glowPulse 3s ease-in-out infinite;
+  transition:all .2s;
+}
+@keyframes glowPulse { 0%,100%{box-shadow:0 4px 18px rgba(196,176,216,.5);} 50%{box-shadow:0 4px 28px rgba(196,176,216,.8);} }
+
+/* Confetti */
+.conf-wrap { position:fixed; inset:0; pointer-events:none; z-index:300; }
+.conf-p {
+  position:absolute; width:7px; height:7px; border-radius:2px;
+  animation:confFall 1.6s ease-out forwards;
+}
+@keyframes confFall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1;} 100%{transform:translateY(100vh) rotate(720deg);opacity:0;} }
+
+/* ══════════════════════════════════════
+   RESPONSIVE BREAKPOINT
+══════════════════════════════════════ */
+@media(min-width:769px) {
+  .desktop-shell { display:grid; }
+  .mobile-shell { display:none; }
+  .ai-fab-mobile { display:none; }
+  .fab { bottom:24px; }
+  .battery-bar { top:0; }
+  .day-panel { padding:0 24px 32px; }
+  .month-header { padding:24px 24px 14px; }
+  .cal-dow, .cal-grid { padding:0 24px 20px; }
+  .blk { grid-template-columns:78px 1fr; }
+}
+@media(max-width:768px) {
+  .desktop-shell { display:none !important; }
+  .ai-float { display:none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     MOBILE SHELL
+══════════════════════════════════════ -->
+<div class="mobile-shell" id="mobileShell">
+  <div class="mobile-topbar" id="mTopbar">
+    <button class="mobile-topbar-back" id="mBackBtn" onclick="mBack()" style="display:none">‹</button>
+    <div class="mobile-topbar-title" id="mTitle">My Planner ✨</div>
+    <button class="sm-btn" style="font-size:.7rem;padding:4px 10px" onclick="showMobileView('vault')">📝</button>
+  </div>
+
+  <div class="mobile-content" id="mContent">
+
+    <!-- M: Calendar -->
+    <div class="view active" id="m-cal">
+      <div class="month-header">
+        <div class="month-title" id="mMonthTitle"></div>
+        <div class="month-nav" style="display:flex;gap:5px">
+          <button onclick="changeMonth(-1)">‹</button>
+          <button onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-dow" id="mCalDow"></div>
+      <div class="cal-grid" id="mCalGrid"></div>
+    </div>
+
+    <!-- M: Week -->
+    <div class="view" id="m-week">
+      <div class="battery-bar" id="mBatBar">
+        <span style="font-size:.95rem">⚡</span>
+        <div class="bat-shell"><div class="bat-fill" id="mBatFill"></div></div>
+        <div class="bat-nub"></div>
+        <div class="bat-pct" id="mBatPct">0%</div>
+      </div>
+      <div class="day-tabs-row" id="mDayTabs"></div>
+      <div id="mDayPanels"></div>
+    </div>
+
+    <!-- M: Vault -->
+    <div class="view" id="m-vault">
+      <div style="padding:16px 16px 8px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700">All Saved Notes 📝</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:3px">Every note, mistake log, and assignment paste</div>
+      </div>
+      <div style="padding:0 16px 24px" id="mVaultContent"></div>
+    </div>
+
+    <!-- M: Settings placeholder -->
+    <div class="view" id="m-settings">
+      <div style="padding:20px 16px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;margin-bottom:16px">Settings ⚙️</div>
+        <div class="section-card">
+          <div class="sec-title">About this app</div>
+          <div style="font-size:.8rem;color:var(--muted);line-height:1.6">This planner was made for you 🌸 It saves everything automatically. Your notes, goals, assignments, and grades are all stored on this device.<br><br>Built with love by your family.</div>
+        </div>
+        <div class="section-card" style="margin-top:10px">
+          <div class="sec-title">Clear all data</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">This will delete all saved notes, goals, and assignments. Cannot be undone.</div>
+          <button class="sm-btn" style="color:#c05050;border-color:#c05050" onclick="if(confirm('Clear all saved data?')){localStorage.clear();location.reload();}">Clear everything</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end mContent -->
+
+  <!-- Bottom tab bar -->
+  <nav class="mobile-bottom-tabs">
+    <button class="m-tab active" id="mtab-cal" onclick="showMobileView('cal')">
+      <span class="m-tab-icon">📅</span>Calendar
+    </button>
+    <button class="m-tab" id="mtab-week" onclick="showMobileView('week')">
+      <span class="m-tab-icon">📋</span>Week
+    </button>
+    <button class="m-tab" id="mtab-vault" onclick="showMobileView('vault')">
+      <span class="m-tab-icon">📝</span>Notes
+    </button>
+    <button class="m-tab" id="mtab-settings" onclick="showMobileView('settings')">
+      <span class="m-tab-icon">⚙️</span>Settings
+    </button>
+  </nav>
+</div><!-- end mobile-shell -->
+
+<!-- ══════════════════════════════════════
+     DESKTOP SHELL
+══════════════════════════════════════ -->
+<div class="desktop-shell" id="desktopShell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>My Planner ✨</h1>
+      <p>Your week, your way</p>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="sidebar-link active" id="dlink-cal" onclick="showDesktopView('cal')">
+        <span class="nav-icon">📅</span> Calendar
+      </button>
+      <button class="sidebar-link" id="dlink-week" onclick="showDesktopView('week')">
+        <span class="nav-icon">📋</span> This Week
+      </button>
+      <button class="sidebar-link" id="dlink-vault" onclick="showDesktopView('vault')">
+        <span class="nav-icon">📝</span> All Notes
+      </button>
+      <button class="sidebar-link" id="dlink-settings" onclick="showDesktopView('settings')">
+        <span class="nav-icon">⚙️</span> Settings
+      </button>
+    </nav>
+    <button class="sidebar-ai-btn" onclick="toggleAI()">🗓️ Edit My Schedule</button>
+  </aside>
+
+  <main class="desktop-main" id="dMain">
+    <!-- D: Calendar -->
+    <div class="view active" id="d-cal">
+      <div class="month-header">
+        <div class="month-title" id="dMonthTitle"></div>
+        <div class="month-nav" style="display:flex;gap:5px">
+          <button onclick="changeMonth(-1)">‹</button>
+          <button onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-dow" id="dCalDow"></div>
+      <div class="cal-grid" id="dCalGrid"></div>
+    </div>
+
+    <!-- D: Week -->
+    <div class="view" id="d-week">
+      <div class="battery-bar desktop-top" id="dBatBar">
+        <span>⚡</span>
+        <div class="bat-shell"><div class="bat-fill" id="dBatFill"></div></div>
+        <div class="bat-nub"></div>
+        <div class="bat-pct" id="dBatPct">0%</div>
+      </div>
+      <div style="padding:20px 24px 8px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700" id="dWeekTitle"></div>
+      </div>
+      <div class="day-tabs-row" id="dDayTabs" style="padding:0 24px 10px"></div>
+      <div id="dDayPanels"></div>
+    </div>
+
+    <!-- D: Vault -->
+    <div class="view" id="d-vault">
+      <div style="padding:24px 24px 8px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700">All Saved Notes 📝</div>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:3px">Every note, mistake log, and assignment paste saved automatically</div>
+      </div>
+      <div style="padding:0 24px 32px" id="dVaultContent"></div>
+    </div>
+
+    <!-- D: Settings -->
+    <div class="view" id="d-settings">
+      <div style="padding:24px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;margin-bottom:16px">Settings ⚙️</div>
+        <div class="section-card" style="max-width:480px">
+          <div class="sec-title">About this app</div>
+          <div style="font-size:.82rem;color:var(--muted);line-height:1.6">This planner was made for you 🌸 Everything saves automatically to this browser. Your notes, goals, assignments, and grades are all stored locally on this device.</div>
+        </div>
+        <div class="section-card" style="max-width:480px;margin-top:10px">
+          <div class="sec-title">Clear all data</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">Deletes all saved notes, goals, and assignments. Cannot be undone.</div>
+          <button class="sm-btn" style="color:#c05050;border-color:#c05050" onclick="if(confirm('Clear all saved data?')){localStorage.clear();location.reload();}">Clear everything</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div><!-- end desktop-shell -->
+
+<!-- FAB: add event -->
+<button class="fab" onclick="openModal()" title="Add event">+</button>
+
+<!-- AI fab mobile -->
+<button class="ai-fab-mobile" onclick="toggleAI()" title="Study helper">✨</button>
+
+<!-- AI Sheet (mobile) / Float (desktop) -->
+<div class="ai-sheet-overlay" id="aiOverlay" onclick="toggleAI()"></div>
+<div class="ai-sheet" id="aiSheet">
+  <div class="ai-handle"></div>
+  <div class="ai-header">
+    <div class="ai-ava">✨</div>
+    <div><div class="ai-name">Study Helper</div><div class="ai-sub">Type or speak — I'm here!</div></div>
+    <button class="ai-x" onclick="toggleAI()">✕</button>
+  </div>
+  <div class="ai-msgs" id="aiMsgs"></div>
+  <div class="ai-input-bar">
+    <button class="ai-mic" id="micBtn" onclick="toggleVoice()">🎤</button>
+    <textarea class="ai-txt" id="aiTxt" rows="1" placeholder="Ask me anything…"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,70)+'px'"></textarea>
+    <button class="ai-send" id="aiSendBtn" onclick="sendAI()">➤</button>
+  </div>
+</div>
+
+<div class="ai-float" id="aiFloat">
+  <div class="ai-header">
+    <div class="ai-ava">✨</div>
+    <div><div class="ai-name">Study Helper</div><div class="ai-sub">Type or speak!</div></div>
+    <button class="ai-x" onclick="toggleAI()">✕</button>
+  </div>
+  <div class="ai-msgs" id="aiMsgsD"></div>
+  <div class="ai-input-bar">
+    <button class="ai-mic" id="micBtnD" onclick="toggleVoice()">🎤</button>
+    <textarea class="ai-txt" id="aiTxtD" rows="1" placeholder="Ask me anything…"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,70)+'px'"></textarea>
+    <button class="ai-send" id="aiSendBtnD" onclick="sendAI()">➤</button>
+  </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="overlay" id="modalOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3>Add Event ✨</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="mfield"><label>Start Date</label><input type="date" id="evtDate"></div>
+      <div class="mfield"><label>End Date <span style="font-weight:400;text-transform:none;letter-spacing:0">(for trips/breaks)</span></label><input type="date" id="evtDateEnd"></div>
+    </div>
+    <div class="mfield"><label>Event Name</label><input type="text" id="evtName" placeholder="e.g. Spring Break, Doctor appt"></div>
+    <div class="mfield"><label>Time (optional, single-day only)</label><input type="time" id="evtTime"></div>
+    <div class="mfield">
+      <label>Type</label>
+      <select id="evtType">
+        <option value="appointment">📅 Appointment</option>
+        <option value="holiday">✡️ Holiday / Yom Tov</option>
+        <option value="test">📝 Test / Quiz</option>
+        <option value="social">💛 Social / Fun</option>
+        <option value="other">📌 Other</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn-pri" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<div class="conf-wrap" id="confWrap"></div>
+
+<!-- Add Block Modal -->
+<div class="overlay" id="addBlockOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3>Add Schedule Block ➕</h3>
+    <input type="hidden" id="addBlockDateStr">
+    <div class="mfield"><label>Time (e.g. 5:00–6:00)</label><input type="text" id="addBlockTime" placeholder="5:00–6:00"></div>
+    <div class="mfield"><label>Title</label><input type="text" id="addBlockTitle" placeholder="e.g. Piano practice"></div>
+    <div class="mfield"><label>Description (optional)</label><input type="text" id="addBlockDesc" placeholder="Optional details"></div>
+    <div class="mfield">
+      <label>Category</label>
+      <select id="addBlockCat">
+        <option value="routine">Routine</option>
+        <option value="hw">Homework</option>
+        <option value="math">Math</option>
+        <option value="free">Free Time</option>
+        <option value="wind">Wind-Down</option>
+        <option value="shabbat">Shabbat</option>
+        <option value="specialist">Specialist</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="closeAddBlockModal()">Cancel</button>
+      <button class="btn-pri" onclick="saveCustomBlock()">Add Block</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Goal Modal -->
+<div class="overlay" id="addGoalOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3>Add Goal / To-Do ⚡</h3>
+    <input type="hidden" id="addGoalDateStr">
+    <div class="mfield"><label>Goal or To-Do</label><input type="text" id="addGoalText" placeholder="e.g. Call grandma, pack for trip…" onkeydown="if(event.key==='Enter') saveCustomGoal()"></div>
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="closeAddGoalModal()">Cancel</button>
+      <button class="btn-pri" onclick="saveCustomGoal()">Add Goal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// DEVICE DETECTION
+// ══════════════════════════════════════
+const isMobile = () => window.innerWidth <= 768;
+
+// ══════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════
+const S = {
+  get(k, d=null){ try{ const v=localStorage.getItem(k); return v!==null?JSON.parse(v):d; }catch{ return d; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} }
+};
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let curMonth = new Date(2026,2,1);
+let curWeekStart = null;
+let curDayIdx = 0;
+let timerSec = 0, timerRunning = false, timerInterval = null, timerDs = null;
+let aiOpen = false, aiLoading = false, aiHistory = [];
+let recognition = null, isListening = false;
+
+// ══════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAY_FULL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+const QUOTES = {
+  Mon:'"Starting is the hardest part. The moment you begin, it gets easier."',
+  Tue:'"You don\'t have to be perfect. You just have to show up."',
+  Wed:'"Every mistake is proof you\'re trying. Keep going."',
+  Thu:'"You\'ve made it to Thursday. The weekend is almost yours."',
+  Fri:'"Shabbat is coming — rest is not laziness, it\'s wisdom. 🕯️"',
+  Sat:'"Shabbat Shalom. You deserve every second of this peace. ✡️"',
+  Sun:'"A new week is a fresh start. You get to try again."'
+};
+
+const FIXED_EVENTS = [
+  {date:'2026-03-13',name:'Purim 🎭',type:'holiday'},
+  {date:'2026-03-14',name:'Shushan Purim',type:'holiday'},
+  {date:'2026-04-02',name:'Passover Begins 🍷',type:'holiday'},
+  {date:'2026-04-03',name:'Passover Day 2',type:'holiday'},
+  {date:'2026-04-08',name:'Passover Day 7',type:'holiday'},
+  {date:'2026-04-09',name:'Passover Ends',type:'holiday'},
+  {date:'2026-04-14',name:'Spring Break 🌸',type:'holiday'},
+  {date:'2026-05-14',name:"Lag B'Omer 🔥",type:'holiday'},
+  {date:'2026-05-22',name:'Shavuot Begins 🌸',type:'holiday'},
+  {date:'2026-05-23',name:'Shavuot Day 2',type:'holiday'},
+  {date:'2026-05-25',name:'Memorial Day 🇺🇸',type:'holiday'},
+  {date:'2026-06-15',name:'Last Day of School 🎓',type:'holiday'},
+];
+
+function getAllEvents(){ return [...FIXED_EVENTS,...S.get('custom_events',[])]; }
+function getEventsOn(ds){ return getAllEvents().filter(e=>e.date===ds); }
+function isShabbat(d){ return d.getDay()===5||d.getDay()===6; }
+function ds(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function dayOfWeek(idx){ const d=new Date(curWeekStart); d.setDate(d.getDate()+idx); return d; }
+
+// ══════════════════════════════════════
+// SCHEDULE DATA
+// ══════════════════════════════════════
+function getSched(name){
+  const s={
+    Mon:{goal:'🎯 Arrive at specialist with 2 questions written',blocks:[
+      {t:'4:30–5:00',title:'🏠 Arrive & Decompress',desc:'Snack, change, real break. Phone is fine here — let your brain switch out of school mode.',cat:'routine',tag:'routine'},
+      {t:'5:00–6:00',title:'🧑‍🏫 Specialist Session',desc:'Open your planner first. Tell him the 2 things you are stuck on. Ask WHY, not just the answer. After he shows you — redo it yourself with the page flipped.',cat:'specialist',tag:'hw'},
+      {t:'6:00–6:20',title:'🚿 Shower',desc:'Quick shower — good transition between specialist and homework mode.',cat:'routine',tag:'routine'},
+      {t:'6:20–7:20',title:'➕ Math Homework',desc:'Forest timer on — 20 min block, phone in another room. Stuck after 3 min? Draw it, try smaller numbers, check your class notes. After HW: redo 2 wrong problems from scratch.',cat:'math',tag:'math'},
+      {t:'7:20–8:10',title:'📚 Other Homework',desc:'Check Blackbaud or paper notes for all assignments. Easiest first for a quick win, then the rest. 5-min break between subjects.',cat:'hw',tag:'hw'},
+      {t:'8:10–9:00',title:'🎨 Free Time',desc:'Phone back. Music, art, videos, texting — fully yours. You finished. This is the reward.',cat:'free',tag:'free'},
+      {t:'9:00–9:30',title:'🌙 Wind-Down',desc:'Dim lights. Pack bag. Check planner for tomorrow. 3 slow breaths: in 4, hold 4, out 6.',cat:'wind',tag:'wind'},
+      {t:'10:30',title:'💤 Lights Out',desc:'Phone charges outside your room. Sleep locks in everything you learned today.',cat:'sleep',tag:'sleep'},
+    ]},
+    Tue:{goal:'🎯 Self-grade math HW — time yourself, log every mistake',blocks:[
+      {t:'4:30–5:00',title:'🏠 Arrive & Decompress',desc:'Full break. No school thoughts until 5:00. Snack, music, breathe.',cat:'routine',tag:'routine'},
+      {t:'5:00–6:10',title:'➕ Math Homework + Self-Grade',desc:'Forest timer. After finishing: set a timer, grade your own work using class notes. Write every mistake in the box below. Understand WHY — that is the whole point.',cat:'math',tag:'math'},
+      {t:'6:10–7:10',title:'📚 Other Homework',desc:'Check Blackbaud or paper notes. Start easy, build momentum. Two 20-min blocks with a stretch break between.',cat:'hw',tag:'hw'},
+      {t:'7:10–7:30',title:'🚿 Shower',desc:'Refresh and reset — helps signal the transition to evening.',cat:'routine',tag:'routine'},
+      {t:'7:30–9:00',title:'🎵 Free Time',desc:'Longer free tonight — you did the self-grading effort. Art, music, videos, friends.',cat:'free',tag:'free'},
+      {t:'9:00–9:30',title:'🌙 Wind-Down',desc:'Pack bag. Planner check. 3 slow breaths. Lights dim.',cat:'wind',tag:'wind'},
+      {t:'10:30',title:'💤 Lights Out',desc:'Phone outside room. Rest.',cat:'sleep',tag:'sleep'},
+    ]},
+    Wed:{goal:'🎯 Show specialist what Tuesday\'s self-grade revealed',blocks:[
+      {t:'4:30–5:00',title:'🏠 Arrive & Decompress',desc:'Real transition time. Do not start homework in your head until 5:00.',cat:'routine',tag:'routine'},
+      {t:'5:00–6:00',title:'🧑‍🏫 Specialist Session',desc:'Bring Tuesday mistake notes. Tell him: "I self-graded and I am still confused about ___." Do practice problems together — talk your thinking out loud. Redo every example yourself.',cat:'specialist',tag:'hw'},
+      {t:'6:00–7:00',title:'📚 Other Homework First',desc:'Check Blackbaud or paper notes. Wednesday = non-math first. Fresh perspective. 20-min Forest blocks.',cat:'hw',tag:'hw'},
+      {t:'7:00–7:40',title:'➕ Math Homework',desc:'Math last tonight since specialist covered it today. Self-grade when done.',cat:'math',tag:'math'},
+      {t:'7:40–8:00',title:'🚿 Shower',desc:'Good wind-down signal for the evening.',cat:'routine',tag:'routine'},
+      {t:'8:00–9:00',title:'🎨 Free Time',desc:'Midweek recharge. Draw, music, something you enjoy. You made it to Wednesday.',cat:'free',tag:'free'},
+      {t:'9:00–9:30',title:'🌙 Wind-Down',desc:'Pack bag. Note anything for Thursday. 3-breath reset.',cat:'wind',tag:'wind'},
+      {t:'10:30',title:'💤 Lights Out',desc:'Halfway done. Rest well.',cat:'sleep',tag:'sleep'},
+    ]},
+    Thu:{goal:'🎯 Active recall — write what you know before looking at notes',blocks:[
+      {t:'4:30–5:00',title:'🏠 Arrive & Decompress',desc:'Real break before anything starts.',cat:'routine',tag:'routine'},
+      {t:'5:00–6:00',title:'➕ Math Homework + Self-Grade',desc:'Timer on, Forest running. Self-grade: compare to class notes, circle every mistake, write what went wrong. Redo wrong ones before moving on.',cat:'math',tag:'math'},
+      {t:'6:00–7:00',title:'📚 Other HW + Self-Test',desc:'Check Blackbaud or paper notes. If a test is coming: after HW, close everything and write every concept you remember. Then check what you missed. This is the best study method there is.',cat:'hw',tag:'hw'},
+      {t:'7:00–7:20',title:'🚿 Shower',desc:'Decompress and refresh.',cat:'routine',tag:'routine'},
+      {t:'7:20–9:00',title:'🎨 Free Time',desc:'Two full hours. Almost Friday. Art, music, friends. Complete recharge.',cat:'free',tag:'free'},
+      {t:'9:00–9:30',title:'🌙 Wind-Down',desc:'Pack bag. Check Friday (Shabbat dinner 7:00–7:45!). 3 slow breaths.',cat:'wind',tag:'wind'},
+      {t:'10:30',title:'💤 Lights Out',desc:'Tomorrow is Friday. Sleep well.',cat:'sleep',tag:'sleep'},
+    ]},
+    Fri:{goal:'🎯 All HW done by 6:00 — Shabbat dinner at 7:00 🕯️',blocks:[
+      {t:'4:30–5:15',title:'🏠 Arrive & Decompress',desc:'Longer break — you made it to Friday. Music, snack. School brain off until 5:15.',cat:'routine',tag:'routine'},
+      {t:'5:15–6:00',title:'📚 Homework Sprint',desc:'Check Blackbaud or paper notes for anything due Monday. Two 20-min Forest blocks. Done fast = rest of Friday is free.',cat:'hw',tag:'hw'},
+      {t:'6:00–6:45',title:'🚿 Shower + Get Ready',desc:'Shower, get dressed for Shabbat dinner. Wind down from the week.',cat:'routine',tag:'routine'},
+      {t:'7:00–7:45',title:'🕯️ Shabbat Dinner',desc:'Family time. Be present. No phones at the table. This is the reset your whole week builds toward.',cat:'shabbat',tag:'shabbat'},
+      {t:'7:45–10:00',title:'🌟 Shabbat Evening',desc:'Free time, family, music, art. You earned a real rest.',cat:'free',tag:'free'},
+      {t:'10:00–10:30',title:'🌙 Wind-Down',desc:'Gentle close. Light reading, calm music. You finished the whole week.',cat:'wind',tag:'wind'},
+    ]},
+    Sat:{goal:'🕊️ Rest and recharge — Shabbat is sacred time',blocks:[
+      {t:'Morning',title:'✡️ Shabbat Morning',desc:'Sleep in. Family, synagogue, slow morning. No rushing, no homework.',cat:'shabbat',tag:'shabbat'},
+      {t:'Afternoon',title:'🎨 Creative Time',desc:'Art, music, doodling, albums. Whatever feels peaceful. Your brain is filing everything you learned this week while you relax.',cat:'free',tag:'free'},
+      {t:'Evening',title:'⭐ Havdalah + Free Time',desc:'Shabbat ends. Relaxed evening. If reviewing for a Monday test: 20 min max — close notes, write what you remember, check. Then stop.',cat:'free',tag:'free'},
+      {t:'Before bed',title:'🌙 Wind-Down',desc:'Earlier bedtime sets up Sunday well. 3 slow breaths.',cat:'wind',tag:'wind'},
+    ]},
+    Sun:{goal:'🎯 Paste all assignments from Blackbaud + pack bag tonight',blocks:[
+      {t:'Morning',title:'☀️ Morning — No Rush',desc:'Sleep in, slow breakfast. Real rest before the week starts.',cat:'routine',tag:'routine'},
+      {t:'Afternoon',title:'📋 Weekly Reset (30 min)',desc:'Open Blackbaud or check paper notes. Copy ALL assignments for the upcoming week into the box below. Knowing what is coming kills the Sunday dread.',cat:'hw',tag:'hw'},
+      {t:'Afternoon',title:'🎨 Free Afternoon',desc:'Art, music, videos, friends. You did the reset. The rest is yours.',cat:'free',tag:'free'},
+      {t:'If test Mon/Tue',title:'📝 Test Review (20-30 min MAX)',desc:'ONLY if test tomorrow or Tuesday. Close notes. Write everything you remember. Check what you missed. 3-5 practice problems. Stop after 30 min.',cat:'math',tag:'math'},
+      {t:'9:00–9:30',title:'🌙 Wind-Down + Pack Bag',desc:'Pack bag tonight so Monday morning is not chaos. Planner open. 3 slow breaths. Phone outside room.',cat:'wind',tag:'wind'},
+      {t:'10:30',title:'💤 Lights Out',desc:'Best thing you can do for Monday is sleep well tonight.',cat:'sleep',tag:'sleep'},
+    ]},
+  };
+  return s[name]||s.Mon;
+}
+
+function getDayGoals(name){
+  return {
+    Mon:['Arrived at specialist with 2 written questions','Redid 1 problem the specialist showed me — myself','Math HW done with Forest timer','Checked Blackbaud or paper notes for all assignments','Bag packed before 9:30','Lights out by 10:30'],
+    Tue:['Math HW done with timer running','Self-graded and logged every mistake','Understood why each mistake happened','Checked all assignments (Blackbaud or paper)','Bag packed, planner checked','Lights out by 10:30'],
+    Wed:['Brought Tuesday mistake notes to specialist','Did at least 1 problem independently during session','All HW done by 7:45','Shower done','Wind-down started by 9:00','Lights out by 10:30'],
+    Thu:['Math HW done + self-graded','Tried active recall (write from memory first)','2 full hours of free time — no guilt','Bag packed for Friday','Notes written','Lights out by 10:30'],
+    Fri:['All HW done before 6:00','Showered and ready by 6:45','Present at Shabbat dinner 🕯️','Phone away during dinner','Really rested this evening'],
+    Sat:['Genuinely rested — not guilty','Creative time (art, music)','If review: 20 min max then stopped'],
+    Sun:["Pasted all assignments from Blackbaud","Weekly planner check done","Bag packed tonight","If test tomorrow: active recall, then stopped","In bed by 10:30"]
+  }[name]||[];
+}
+
+// ══════════════════════════════════════
+// MOBILE VIEW MANAGEMENT
+// ══════════════════════════════════════
+let curMobileView = 'cal';
+function showMobileView(v){
+  document.querySelectorAll('.mobile-shell .view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('m-'+v).classList.add('active');
+  document.querySelectorAll('.m-tab').forEach(t=>t.classList.remove('active'));
+  const tab = document.getElementById('mtab-'+v);
+  if(tab) tab.classList.add('active');
+  curMobileView = v;
+  const backBtn = document.getElementById('mBackBtn');
+  const titles = {cal:'My Planner ✨', week:'This Week', vault:'All Notes', settings:'Settings'};
+  document.getElementById('mTitle').textContent = titles[v]||'My Planner ✨';
+  if(v==='week'){ backBtn.style.display='flex'; } else { backBtn.style.display='none'; }
+  if(v==='vault') renderVault('m');
+}
+function mBack(){ showMobileView('cal'); }
+
+// ══════════════════════════════════════
+// DESKTOP VIEW MANAGEMENT
+// ══════════════════════════════════════
+function showDesktopView(v){
+  document.querySelectorAll('.desktop-shell .view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('d-'+v).classList.add('active');
+  document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.remove('active'));
+  document.getElementById('dlink-'+v).classList.add('active');
+  if(v==='vault') renderVault('d');
+}
+
+// ══════════════════════════════════════
+// CALENDAR RENDER
+// ══════════════════════════════════════
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function renderCal(){
+  const y=curMonth.getFullYear(), m=curMonth.getMonth();
+  const label = `${MONTHS[m]} ${y}`;
+  ['mMonthTitle','dMonthTitle'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=label; });
+
+  const dowHTML = DOW.map(d=>`<div>${d}</div>`).join('');
+  ['mCalDow','dCalDow'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=dowHTML; });
+
+  const today=new Date();
+  const firstDay=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const prevDays=new Date(y,m,0).getDate();
+  let html='';
+
+  for(let i=firstDay-1;i>=0;i--){
+    html+=`<div class="cal-cell other-month"><div class="cal-date">${prevDays-i}</div></div>`;
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(y,m,d);
+    const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let cls='cal-cell';
+    if(date.toDateString()===today.toDateString()) cls+=' today';
+    if(isShabbat(date)) cls+=' shabbat-day';
+    const evts=getEventsOn(dateStr);
+    if(evts.some(e=>e.type==='holiday')) cls+=' holiday-day';
+
+    const mon = getMonday(date);
+    const isSchoolDay = date.getDay()>=1&&date.getDay()<=5;
+    const onclick = isSchoolDay ? `openWeek('${ds(mon)}')` : (date.getDay()===6?`openWeek('${ds(mon)}')`:``);
+
+    cls += (isSchoolDay||date.getDay()===6) ? ' has-week' : '';
+    if(curWeekStart&&date>=curWeekStart&&date<new Date(curWeekStart.getTime()+7*864e5)) cls+=' cur-week';
+
+    const evtHtml = evts.slice(0,2).map(e=>`<div class="cal-evt ${e.type}">${e.name}</div>`).join('');
+    const todayCls = date.toDateString()===today.toDateString();
+    const dateHtml = todayCls ? `<div class="cal-date" style="background:var(--rose);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem">${d}</div>` : `<div class="cal-date">${d}</div>`;
+    const shabLabel = date.getDay()===5 ? `<div style="font-size:.55rem;color:var(--gold);font-weight:700;margin-top:1px">🕯️</div>` : '';
+
+    html+=`<div class="${cls}" ${onclick?`onclick="${onclick}"`:''}>${dateHtml}${evtHtml}${shabLabel}</div>`;
+  }
+  const total=firstDay+daysInMonth;
+  const rem=(7-total%7)%7;
+  for(let i=1;i<=rem;i++) html+=`<div class="cal-cell other-month"><div class="cal-date">${i}</div></div>`;
+
+  ['mCalGrid','dCalGrid'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=html; });
+}
+
+function getMonday(d){
+  const day=d.getDay();
+  const diff=day===0?-6:1-day;
+  const m=new Date(d); m.setDate(d.getDate()+diff); return m;
+}
+
+function changeMonth(dir){
+  curMonth=new Date(curMonth.getFullYear(),curMonth.getMonth()+dir,1);
+  renderCal();
+}
+
+function openWeek(mondayStr){
+  const parts=mondayStr.split('-');
+  curWeekStart=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  curDayIdx=0;
+  renderWeek();
+  renderCal();
+  if(isMobile()) showMobileView('week');
+  else showDesktopView('week');
+}
+
+// ══════════════════════════════════════
+// WEEK RENDER
+// ══════════════════════════════════════
+function renderWeek(){
+  if(!curWeekStart) return;
+  const endDate=new Date(curWeekStart); endDate.setDate(curWeekStart.getDate()+6);
+  const fmt=d=>`${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}`;
+  const title=`Week of ${fmt(curWeekStart)} – ${fmt(endDate)}`;
+  const el=document.getElementById('dWeekTitle'); if(el) el.textContent=title;
+
+  // Build tabs + panels for both mobile and desktop
+  ['m','d'].forEach(prefix=>{
+    const tabsEl=document.getElementById(prefix+'DayTabs');
+    const panelsEl=document.getElementById(prefix+'DayPanels');
+    if(!tabsEl||!panelsEl) return;
+
+    tabsEl.innerHTML='';
+    panelsEl.innerHTML='';
+
+    DAY_SHORT.forEach((name,i)=>{
+      const d=dayOfWeek(i);
+      const btn=document.createElement('button');
+      btn.className='dtab'+(i===curDayIdx?' active':'');
+      if(name==='Fri'||name==='Sat') btn.classList.add('shab');
+      const isToday=d.toDateString()===new Date().toDateString();
+      btn.textContent=`${name} ${d.getDate()}${isToday?' ✦':''}`;
+      btn.onclick=()=>switchDay(i);
+      tabsEl.appendChild(btn);
+
+      const panel=document.createElement('div');
+      panel.className='day-panel'+(i===curDayIdx?' active':'');
+      panel.id=`${prefix}panel-${i}`;
+      panel.innerHTML=buildPanel(name,i,prefix);
+      panelsEl.appendChild(panel);
+    });
+  });
+
+  updateBattery();
+  restoreAll();
+}
+
+function switchDay(idx){
+  curDayIdx=idx;
+  ['m','d'].forEach(p=>{
+    document.querySelectorAll(`#${p}DayTabs .dtab`).forEach((t,i)=>t.classList.toggle('active',i===idx));
+    document.querySelectorAll(`#${p}DayPanels .day-panel`).forEach((p,i)=>p.classList.toggle('active',i===idx));
+  });
+}
+
+function buildPanel(name,idx,prefix){
+  const sched=getSched(name);
+  const d=dayOfWeek(idx);
+  const dateStr=ds(d);
+  const weekKey=curWeekStart?ds(curWeekStart):'';
+  const isSun=name==='Sun';
+  const isMathDay=['Mon','Tue','Wed','Thu'].includes(name);
+  const isSchoolDay=['Mon','Tue','Wed','Thu','Fri'].includes(name);
+  let h='';
+
+  // Quote
+  h+=`<div class="quote-card">${QUOTES[name]}</div>`;
+
+  // Calendar events today
+  const evts=getEventsOn(dateStr);
+  if(evts.length){
+    h+=`<div class="section-card" style="background:var(--sage-soft);border-color:var(--sage)">
+      <div class="sec-title">📅 Today's Events</div>`;
+    evts.forEach(e=>{
+      h+=`<div class="assign-item"><span>${e.type==='holiday'?'✡️':e.type==='test'?'📝':'📌'}</span><div class="a-txt">${e.name}${e.time?' at '+e.time:''}</div></div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // Sunday assignment paste
+  if(isSun){
+    const pasteVal=S.get('paste_'+weekKey,'');
+    h+=`<div class="section-card">
+      <div class="sec-title">📋 Paste This Week's Assignments</div>
+      <div class="sec-sub">Open Blackbaud (or your paper notes). Copy all assignments for the week here so you know what's coming every day.</div>
+      <textarea class="note-area" id="${prefix}paste_${weekKey}" placeholder="Mon: Math p.45 #1-10&#10;Tue: English reading ch.3&#10;..." style="min-height:110px">${pasteVal}</textarea>
+    </div>`;
+  }
+
+  // Daily assignment check
+  if(isSchoolDay){
+    h+=`<div class="section-card">
+      <div class="sec-title">✅ Assignment Check</div>
+      <div class="sec-sub">Check Blackbaud or your paper class notes. Add every assignment below and check off as you complete each one.</div>
+      <div id="${prefix}alist_${dateStr}">${buildAssigns(dateStr)}</div>
+      <div class="add-row">
+        <input class="add-input" id="${prefix}newA_${dateStr}" placeholder="Add assignment…" onkeydown="if(event.key==='Enter') addAssign('${dateStr}','${prefix}')">
+        <button class="add-btn" onclick="addAssign('${dateStr}','${prefix}')">+ Add</button>
+      </div>
+      <div style="margin-top:8px">
+        <textarea class="note-area" id="${prefix}tnotes_${dateStr}" placeholder="Teacher notes: e.g. 'Ms. Cohen moved the test to Friday'…" style="min-height:46px">${S.get('tnotes_'+dateStr,'')}</textarea>
+      </div>
+    </div>`;
+  }
+
+  // Time blocks
+  const customBlocks=S.get('custom_blocks_'+dateStr,[]);
+  const overrides=S.get('block_overrides_'+dateStr,{});
+  const baseBlocks=sched.blocks
+    .filter(b=>overrides[b.title]!=='DELETED')
+    .map(b=>{
+      const ov=overrides[b.title];
+      if(ov&&typeof ov==='object') return {...b,...ov};
+      return b;
+    });
+  const allBlocks=[...baseBlocks, ...customBlocks.map(cb=>({...cb,custom:true}))];
+  h+=`<div class="sec-title" style="padding:4px 0 6px;display:flex;align-items:center;justify-content:space-between">
+    <span>🕐 Today's Schedule</span>
+    <button class="sm-btn" style="font-size:.7rem;padding:4px 10px" onclick="openAddBlockModal('${dateStr}')">+ Add Block</button>
+  </div>`;
+  h+=`<div class="block-list" id="${prefix}blocks_${dateStr}">`;
+  allBlocks.forEach((b,bi)=>{
+    const delBtn=b.custom?`<button onclick="deleteCustomBlock('${dateStr}',${bi - sched.blocks.length})" style="position:absolute;top:6px;right:8px;background:none;border:none;font-size:.75rem;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:4px" title="Remove">✕</button>`:'';
+    h+=`<div class="blk cat-${b.cat||'routine'}" style="position:relative">
+      <div class="blk-time">${b.t||b.time||''}</div>
+      <div style="padding-right:${b.custom?'24px':'0'}"><div class="blk-title">${b.title}</div><div class="blk-desc">${b.desc||''}</div>${b.tag?`<span class="blk-tag tag-${b.tag}">${b.tag.charAt(0).toUpperCase()+b.tag.slice(1)}</span>`:''}</div>
+      ${delBtn}
+    </div>`;
+  });
+  h+=`</div>`;
+
+  // Goals (built-in + custom)
+  const goals=getDayGoals(name);
+  const customGoals=S.get('custom_goals_'+dateStr,[]);
+  const allGoals=[...goals,...customGoals.map(g=>({text:g,custom:true}))];
+  h+=`<div class="section-card">
+    <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>⚡ Today's Goals <span style="font-size:.7rem;color:var(--muted);font-weight:400">— check off to charge the battery!</span></span>
+      <button class="sm-btn" style="font-size:.7rem;padding:4px 10px;flex-shrink:0" onclick="openAddGoalModal('${dateStr}')">+ Add Goal</button>
+    </div>
+    <div id="${prefix}goallist_${dateStr}">`;
+  allGoals.forEach((g,gi)=>{
+    const gtext=typeof g==='string'?g:g.text;
+    const isCustom=typeof g==='object'&&g.custom;
+    const key=isCustom?`custom_goals_${dateStr}_${gi-goals.length}`:`goals_${dateStr}_${gi}`;
+    const on=S.get('goalstate_'+key,false);
+    const delBtn=isCustom?`<button onclick="deleteCustomGoal('${dateStr}',${gi-goals.length})" style="background:none;border:none;font-size:.75rem;color:var(--muted);cursor:pointer;padding:2px 4px;margin-left:4px;flex-shrink:0" title="Remove">✕</button>`:'';
+    h+=`<div class="goal-item">
+      <div class="g-check${on?' on':''}" id="${prefix}gc_${key}" onclick="toggleGoal('${key}','${dateStr}','${prefix}')">${on?'✓':''}</div>
+      <div class="g-label${on?' done':''}" id="${prefix}gt_${key}" onclick="toggleGoal('${key}','${dateStr}','${prefix}')">${gtext}</div>
+      ${delBtn}
+    </div>`;
+  });
+  h+=`</div></div>`;
+
+  // Self-grade (math days)
+  if(isMathDay){
+    h+=`<div class="section-card">
+      <div class="sec-title">📊 Self-Grade Your Math</div>
+      <div class="star-row">
+        <div class="star-label">Effort</div>
+        <div>${[1,2,3,4,5].map(n=>`<button class="star${(S.get('stars_effort_'+dateStr,0))>=n?' on':''}" onclick="setStars('effort','${dateStr}',${n},'${prefix}')">⭐</button>`).join('')}</div>
+      </div>
+      <div class="star-row">
+        <div class="star-label">Understanding</div>
+        <div>${[1,2,3,4,5].map(n=>`<button class="star${(S.get('stars_understand_'+dateStr,0))>=n?' on':''}" onclick="setStars('understand','${dateStr}',${n},'${prefix}')">⭐</button>`).join('')}</div>
+      </div>
+      <div class="star-row">
+        <div class="star-label">⏱ Study Timer</div>
+        <div class="timer-row">
+          <div class="timer-disp" id="${prefix}timerDisp_${dateStr}">${fmtTime(S.get('timersec_'+dateStr,0))}</div>
+          <button class="sm-btn" id="${prefix}timerBtn_${dateStr}" onclick="toggleTimer('${dateStr}','${prefix}')">Start</button>
+          <button class="sm-btn" onclick="resetTimer('${dateStr}','${prefix}')">Reset</button>
+        </div>
+      </div>
+      <div style="margin-top:6px">
+        <div style="font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:4px">MISTAKES TO REVIEW</div>
+        <textarea class="note-area" id="${prefix}mistakes_${dateStr}" placeholder="Write every mistake here. What went wrong? What is the right way? This is where you actually learn." rows="3">${S.get('mistakes_'+dateStr,'')}</textarea>
+      </div>
+    </div>`;
+  }
+
+  // Notes
+  h+=`<div class="section-card">
+    <div class="sec-title">📝 Notes for Today</div>
+    <textarea class="note-area" id="${prefix}notes_${dateStr}" placeholder="Anything — what felt hard, what clicked, how you are feeling…">${S.get('notes_'+dateStr,'')}</textarea>
+  </div>`;
+
+  return h;
+}
+
+// ══════════════════════════════════════
+// ASSIGNMENTS
+// ══════════════════════════════════════
+function buildAssigns(dateStr){
+  const items=S.get('assigns_'+dateStr,[]);
+  if(!items.length) return `<div class="empty-msg">No assignments yet — check Blackbaud or your paper notes.</div>`;
+  return items.map((item,i)=>`
+    <div class="assign-item">
+      <div class="a-check${item.done?' on':''}" onclick="toggleAssign('${dateStr}',${i})">${item.done?'✓':''}</div>
+      <div class="a-txt${item.done?' done':''}">${item.text}</div>
+    </div>`).join('');
+}
+
+function addAssign(dateStr,prefix){
+  const inp=document.getElementById(prefix+'newA_'+dateStr);
+  if(!inp) return;
+  const txt=inp.value.trim(); if(!txt) return;
+  const items=S.get('assigns_'+dateStr,[]); items.push({text:txt,done:false});
+  S.set('assigns_'+dateStr,items); inp.value='';
+  ['m','d'].forEach(p=>{ const el=document.getElementById(p+'alist_'+dateStr); if(el) el.innerHTML=buildAssigns(dateStr); });
+  updateBattery(); sparkle();
+}
+
+function toggleAssign(dateStr,i){
+  const items=S.get('assigns_'+dateStr,[]);
+  if(!items[i]) return;
+  items[i].done=!items[i].done;
+  S.set('assigns_'+dateStr,items);
+  ['m','d'].forEach(p=>{ const el=document.getElementById(p+'alist_'+dateStr); if(el) el.innerHTML=buildAssigns(dateStr); });
+  updateBattery(); if(items[i].done) sparkle();
+}
+
+// ══════════════════════════════════════
+// GOALS
+// ══════════════════════════════════════
+function toggleGoal(key,dateStr,prefix){
+  const on=!S.get('goalstate_'+key,false);
+  S.set('goalstate_'+key,on);
+  ['m','d'].forEach(p=>{
+    const box=document.getElementById(p+'gc_'+key);
+    const txt=document.getElementById(p+'gt_'+key);
+    if(box){ box.classList.toggle('on',on); box.textContent=on?'✓':''; }
+    if(txt) txt.classList.toggle('done',on);
+  });
+  updateBattery(); if(on) sparkle();
+}
+
+// ══════════════════════════════════════
+// BATTERY
+// ══════════════════════════════════════
+function updateBattery(){
+  if(!curWeekStart) return;
+  let total=0,done=0;
+  DAY_SHORT.forEach((name,i)=>{
+    const d=dayOfWeek(i); const dateStr=ds(d);
+    const goals=getDayGoals(name);
+    const customGoals=S.get('custom_goals_'+dateStr,[]);
+    const allGoalCount=goals.length+customGoals.length;
+    total+=allGoalCount;
+    goals.forEach((_,gi)=>{ if(S.get('goalstate_goals_'+dateStr+'_'+gi,false)) done++; });
+    customGoals.forEach((_,gi)=>{ if(S.get('goalstate_custom_goals_'+dateStr+'_'+gi,false)) done++; });
+    const assigns=S.get('assigns_'+dateStr,[]);
+    total+=assigns.length; done+=assigns.filter(a=>a.done).length;
+  });
+  const pct=total?Math.round(done/total*100):0;
+  ['mBatFill','dBatFill'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.width=pct+'%'; });
+  ['mBatPct','dBatPct'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=pct+'%'; });
+  if(pct>=100) burst();
+}
+
+// ══════════════════════════════════════
+// STARS / TIMER
+// ══════════════════════════════════════
+function setStars(type,dateStr,n,prefix){
+  S.set('stars_'+type+'_'+dateStr,n);
+  ['m','d'].forEach(p=>{
+    const panel=document.getElementById(p+'panel-'+DAY_SHORT.indexOf(
+      ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][DAY_SHORT.findIndex((_,i)=>ds(dayOfWeek(i))===dateStr)]
+    ));
+    // Re-render star states
+    document.querySelectorAll(`[onclick*="setStars('${type}','${dateStr}'"]`).forEach(btn=>{
+      const bN=parseInt(btn.getAttribute('onclick').match(/,(\d+),/)[1]);
+      btn.classList.toggle('on',bN<=n);
+    });
+  });
+}
+
+function fmtTime(s){ return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+
+function toggleTimer(dateStr,prefix){
+  const btn=document.getElementById(prefix+'timerBtn_'+dateStr);
+  if(timerRunning&&timerDs===dateStr){
+    clearInterval(timerInterval); timerRunning=false;
+    if(btn){ btn.textContent='Resume'; btn.classList.remove('running'); }
+  } else {
+    if(timerDs!==dateStr){ clearInterval(timerInterval); timerSec=S.get('timersec_'+dateStr,0); timerDs=dateStr; }
+    timerRunning=true;
+    if(btn){ btn.textContent='Pause'; btn.classList.add('running'); }
+    timerInterval=setInterval(()=>{
+      timerSec++;
+      S.set('timersec_'+dateStr,timerSec);
+      ['m','d'].forEach(p=>{ const el=document.getElementById(p+'timerDisp_'+dateStr); if(el) el.textContent=fmtTime(timerSec); });
+    },1000);
+  }
+}
+
+function resetTimer(dateStr,prefix){
+  clearInterval(timerInterval); timerRunning=false; timerSec=0; timerDs=null;
+  S.set('timersec_'+dateStr,0);
+  ['m','d'].forEach(p=>{
+    const disp=document.getElementById(p+'timerDisp_'+dateStr); if(disp) disp.textContent='0:00';
+    const btn=document.getElementById(p+'timerBtn_'+dateStr); if(btn){ btn.textContent='Start'; btn.classList.remove('running'); }
+  });
+}
+
+// ══════════════════════════════════════
+// RESTORE SAVED DATA
+// ══════════════════════════════════════
+function restoreAll(){
+  if(!curWeekStart) return;
+  DAY_SHORT.forEach((name,i)=>{
+    const d=dayOfWeek(i); const dateStr=ds(d);
+    const weekKey=ds(curWeekStart);
+
+    ['m','d'].forEach(p=>{
+      // notes
+      const noteEl=document.getElementById(p+'notes_'+dateStr);
+      if(noteEl){ noteEl.addEventListener('input',()=>S.set('notes_'+dateStr,noteEl.value)); }
+
+      const tnEl=document.getElementById(p+'tnotes_'+dateStr);
+      if(tnEl){ tnEl.addEventListener('input',()=>S.set('tnotes_'+dateStr,tnEl.value)); }
+
+      const mistEl=document.getElementById(p+'mistakes_'+dateStr);
+      if(mistEl){ mistEl.addEventListener('input',()=>S.set('mistakes_'+dateStr,mistEl.value)); }
+
+      const pasteEl=document.getElementById(p+'paste_'+weekKey);
+      if(pasteEl){ pasteEl.addEventListener('input',()=>S.set('paste_'+weekKey,pasteEl.value)); }
+    });
+  });
+}
+
+// ══════════════════════════════════════
+// VAULT
+// ══════════════════════════════════════
+function renderVault(prefix){
+  const el=document.getElementById(prefix+'VaultContent'); if(!el) return;
+  const entries=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k) continue;
+    const isNote=k.startsWith('notes_')||k.startsWith('tnotes_')||k.startsWith('mistakes_')||k.startsWith('paste_');
+    if(isNote){
+      try{
+        const v=JSON.parse(localStorage.getItem(k));
+        if(v&&typeof v==='string'&&v.trim()) entries.push({k,v});
+      }catch{}
+    }
+  }
+  if(!entries.length){ el.innerHTML=`<div class="vault-empty">✨ No notes yet.<br>Start filling in your daily notes and they will appear here.</div>`; return; }
+  entries.sort((a,b)=>b.k.localeCompare(a.k));
+  el.innerHTML=entries.map(e=>{
+    const type=e.k.startsWith('notes_')?'Daily Note':e.k.startsWith('tnotes_')?'Teacher Notes':e.k.startsWith('mistakes_')?'Mistakes Log':'Weekly Assignments';
+    const date=e.k.replace(/^[^_]+_/,'');
+    return `<div class="vault-entry"><div class="vault-label">${type} — ${date}</div><div class="vault-text">${e.v}</div></div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// ADD EVENT MODAL
+// ══════════════════════════════════════
+function openModal(){
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('evtDate').value=ds(new Date());
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+function saveEvent(){
+  const startD=document.getElementById('evtDate').value;
+  const endD=document.getElementById('evtDateEnd').value;
+  const name=document.getElementById('evtName').value.trim();
+  const time=document.getElementById('evtTime').value;
+  const type=document.getElementById('evtType').value;
+  if(!startD||!name) return;
+  const saved=S.get('custom_events',[]);
+  if(endD && endD > startD){
+    // expand range into individual days
+    let cur=new Date(startD+'T12:00:00');
+    const end=new Date(endD+'T12:00:00');
+    while(cur<=end){
+      saved.push({date:ds(cur),name,type});
+      cur.setDate(cur.getDate()+1);
+    }
+  } else {
+    saved.push({date:startD,name,time,type});
+  }
+  S.set('custom_events',saved); closeModal(); renderCal();
+}
+document.getElementById('modalOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('modalOverlay')) closeModal();
+});
+document.getElementById('addBlockOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('addBlockOverlay')) closeAddBlockModal();
+});
+document.getElementById('addGoalOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('addGoalOverlay')) closeAddGoalModal();
+});
+
+// ══════════════════════════════════════
+// AI ASSISTANT
+// ══════════════════════════════════════
+function toggleAI(){
+  aiOpen=!aiOpen;
+  document.getElementById('aiSheet').classList.toggle('open',aiOpen);
+  document.getElementById('aiOverlay').classList.toggle('open',aiOpen&&isMobile());
+  document.getElementById('aiFloat').classList.toggle('open',aiOpen&&!isMobile());
+  if(aiOpen){
+    const id=isMobile()?'aiTxt':'aiTxtD';
+    setTimeout(()=>document.getElementById(id)?.focus(),300);
+  }
+}
+
+function getActiveInput(){ return isMobile()?document.getElementById('aiTxt'):document.getElementById('aiTxtD'); }
+function getActiveMsgs(){ return isMobile()?document.getElementById('aiMsgs'):document.getElementById('aiMsgsD'); }
+
+function buildCtx(){
+  let ctx='Schedule context:\n';
+  if(curWeekStart){
+    ctx+=`Week of ${curWeekStart.toDateString()}\n`;
+    DAY_SHORT.forEach((name,i)=>{
+      const d=dayOfWeek(i); const dateStr=ds(d);
+      const sched=getSched(name);
+      ctx+=`\n${name} ${d.toDateString()}:\n`;
+      sched.blocks.forEach(b=>ctx+=`  ${b.t}: ${b.title}\n`);
+      const assigns=S.get('assigns_'+dateStr,[]);
+      if(assigns.length) ctx+=`  Assignments: ${assigns.map(a=>(a.done?'[done] ':'')+a.text).join(', ')}\n`;
+      const notes=S.get('notes_'+dateStr,'');
+      if(notes) ctx+=`  Notes: ${notes}\n`;
+    });
+  }
+  const evts=getAllEvents().slice(0,6);
+  if(evts.length) ctx+=`\nUpcoming events: ${evts.map(e=>e.date+' '+e.name).join(', ')}`;
+  return ctx;
+}
+
+async function sendAI(){
+  const input=getActiveInput();
+  if(!input) return;
+  const msg=input.value.trim(); if(!msg||aiLoading) return;
+  input.value=''; input.style.height='auto';
+
+  addMsg('user',msg); aiHistory.push({role:'user',content:msg});
+  showTyping(); aiLoading=true;
+  ['aiSendBtn','aiSendBtnD'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=true; });
+
+  try{
+    const sys=`You are a schedule manager for a 7th grade girl's planner app. Your ONLY job is to manage her schedule — move blocks, delete blocks, add new blocks, or rename blocks. Nothing else.
+
+${buildCtx()}
+
+CRITICAL: You must ALWAYS respond with a JSON object. No plain text, no markdown, only raw JSON.
+
+JSON format:
+{
+  "message": "short confirmation of what you did (1 sentence, friendly)",
+  "actions": [
+    // MOVE: change the time of an existing block
+    {"type": "move", "day": "Mon", "blockTitle": "exact title", "newTime": "7:00–8:00"},
+    // DELETE: remove a block entirely
+    {"type": "delete", "day": "Mon", "blockTitle": "exact title"},
+    // ADD: add a new custom block
+    {"type": "add", "day": "Mon", "time": "5:00–6:00", "title": "Block title", "desc": "Optional description", "cat": "routine"},
+    // RENAME: change title/desc of a block
+    {"type": "rename", "day": "Mon", "blockTitle": "old title", "newTitle": "new title"},
+    // ADD_GOAL: add a custom goal/todo to a day
+    {"type": "add_goal", "day": "Mon", "text": "goal text here"}
+  ]
+}
+
+Cat options: math, hw, free, wind, routine, shabbat, sleep, specialist
+Day options: Mon, Tue, Wed, Thu, Fri, Sat, Sun
+If the user says something that is not a schedule request, still return JSON with empty actions array and a friendly message saying you can only help with schedule changes.`;
+
+    const response=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system:sys,messages:aiHistory})
+    });
+
+    const data=await response.json();
+    if(data.error) throw new Error(data.error);
+    const rawText=data.content?.[0]?.text||'{"message":"Something went wrong, try again!","actions":[]}';
+    aiHistory.push({role:'assistant',content:rawText});
+
+    let parsed;
+    try {
+      const clean=rawText.replace(/```json|```/g,'').trim();
+      parsed=JSON.parse(clean);
+    } catch(e) {
+      parsed={message:rawText,actions:[]};
+    }
+
+    removeTyping();
+    addMsg('assistant', parsed.message||' ');
+
+    if(parsed.actions&&parsed.actions.length){
+      applyScheduleActions(parsed.actions);
+    }
+    S.set('ai_history',aiHistory.slice(-20));
+  }catch(err){
+    removeTyping();
+    addMsg('assistant','Hmm, I had trouble connecting. Make sure the app is deployed correctly, then try again! 💛');
+  }
+
+  aiLoading=false;
+  ['aiSendBtn','aiSendBtnD'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=false; });
+}
+
+function addMsg(role,text){
+  const containers=[document.getElementById('aiMsgs'),document.getElementById('aiMsgsD')];
+  containers.forEach(msgs=>{
+    if(!msgs) return;
+    const div=document.createElement('div');
+    div.className='ai-msg '+role;
+    const ava=role==='assistant'?`<div class="ai-ava" style="width:24px;height:24px;font-size:.7rem;flex-shrink:0">✨</div>`:'';
+    div.innerHTML=ava+`<div class="ai-bubble-msg">${text.replace(/\n/g,'<br>')}</div>`;
+    msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+  });
+}
+
+function showTyping(){
+  [document.getElementById('aiMsgs'),document.getElementById('aiMsgsD')].forEach(msgs=>{
+    if(!msgs) return;
+    const div=document.createElement('div');
+    div.className='ai-msg assistant'; div.id='aiTyping_'+msgs.id;
+    div.innerHTML=`<div class="ai-ava" style="width:24px;height:24px;font-size:.7rem;flex-shrink:0">✨</div><div class="ai-bubble-msg"><div class="ai-typing-wrap"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div></div>`;
+    msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+  });
+}
+
+function removeTyping(){
+  ['aiTyping_aiMsgs','aiTyping_aiMsgsD'].forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
+}
+
+// VOICE
+function toggleVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    addMsg('assistant','Voice input needs Chrome browser 🎤 Try typing instead!');
+    if(!aiOpen) toggleAI(); return;
+  }
+  if(isListening){ if(recognition) recognition.stop(); return; }
+  recognition=new SR();
+  recognition.continuous=false; recognition.interimResults=true; recognition.lang='en-US';
+  recognition.onstart=()=>{
+    isListening=true;
+    ['micBtn','micBtnD'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.add('live'); el.textContent='⏹'; } });
+    if(!aiOpen) toggleAI();
+  };
+  recognition.onresult=(e)=>{
+    const t=Array.from(e.results).map(r=>r[0].transcript).join('');
+    const inp=getActiveInput(); if(inp) inp.value=t;
+  };
+  recognition.onend=()=>{
+    isListening=false;
+    ['micBtn','micBtnD'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.remove('live'); el.textContent='🎤'; } });
+    const inp=getActiveInput(); if(inp&&inp.value.trim()) sendAI();
+  };
+  recognition.onerror=()=>{
+    isListening=false;
+    ['micBtn','micBtnD'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.remove('live'); el.textContent='🎤'; } });
+  };
+  recognition.start();
+}
+
+// Restore AI chat history
+const savedHistory=S.get('ai_history',[]);
+if(savedHistory.length){ aiHistory=savedHistory; savedHistory.forEach(m=>addMsg(m.role,m.content)); }
+else {
+  addMsg('assistant','Hey! Tell me what to change in your schedule — move a block, delete something, add something new, or rename a block. I'll update it right away! 🗓️');
+}
+
+// ══════════════════════════════════════
+// SCHEDULE ACTION APPLIER
+// ══════════════════════════════════════
+function applyScheduleActions(actions){
+  actions.forEach(a=>{
+    const dayIdx=DAY_SHORT.indexOf(a.day);
+    if(dayIdx===-1) return;
+    const d=dayOfWeek(dayIdx);
+    const dateStr=ds(d);
+
+    if(a.type==='add'){
+      const blocks=S.get('custom_blocks_'+dateStr,[]);
+      blocks.push({time:a.time,t:a.time,title:a.title,desc:a.desc||'',cat:a.cat||'routine',tag:a.cat||'routine',custom:true});
+      S.set('custom_blocks_'+dateStr,blocks);
+    }
+    else if(a.type==='delete'){
+      // Try to delete from custom blocks first
+      const cBlocks=S.get('custom_blocks_'+dateStr,[]);
+      const newC=cBlocks.filter(b=>!b.title.toLowerCase().includes(a.blockTitle.toLowerCase()));
+      S.set('custom_blocks_'+dateStr,newC);
+      // For built-in blocks, store overrides
+      const overrides=S.get('block_overrides_'+dateStr,{});
+      overrides[a.blockTitle]='DELETED';
+      S.set('block_overrides_'+dateStr,overrides);
+    }
+    else if(a.type==='move'){
+      const overrides=S.get('block_overrides_'+dateStr,{});
+      if(!overrides[a.blockTitle]||overrides[a.blockTitle]==='DELETED') overrides[a.blockTitle]={};
+      if(typeof overrides[a.blockTitle]==='object') overrides[a.blockTitle].time=a.newTime;
+      S.set('block_overrides_'+dateStr,overrides);
+      // Also move custom blocks
+      const cBlocks=S.get('custom_blocks_'+dateStr,[]);
+      cBlocks.forEach(b=>{ if(b.title.toLowerCase().includes(a.blockTitle.toLowerCase())){ b.t=a.newTime; b.time=a.newTime; } });
+      S.set('custom_blocks_'+dateStr,cBlocks);
+    }
+    else if(a.type==='rename'){
+      const overrides=S.get('block_overrides_'+dateStr,{});
+      if(!overrides[a.blockTitle]||overrides[a.blockTitle]==='DELETED') overrides[a.blockTitle]={};
+      if(typeof overrides[a.blockTitle]==='object') overrides[a.blockTitle].title=a.newTitle;
+      S.set('block_overrides_'+dateStr,overrides);
+    }
+    else if(a.type==='add_goal'){
+      const goals=S.get('custom_goals_'+dateStr,[]);
+      goals.push(a.text);
+      S.set('custom_goals_'+dateStr,goals);
+    }
+  });
+  // Re-render week
+  if(curWeekStart) renderWeek();
+}
+
+// ══════════════════════════════════════
+// ADD BLOCK MODAL
+// ══════════════════════════════════════
+function openAddBlockModal(dateStr){
+  document.getElementById('addBlockDateStr').value=dateStr;
+  document.getElementById('addBlockTime').value='';
+  document.getElementById('addBlockTitle').value='';
+  document.getElementById('addBlockDesc').value='';
+  document.getElementById('addBlockCat').value='routine';
+  document.getElementById('addBlockOverlay').classList.add('open');
+}
+function closeAddBlockModal(){ document.getElementById('addBlockOverlay').classList.remove('open'); }
+function saveCustomBlock(){
+  const dateStr=document.getElementById('addBlockDateStr').value;
+  const time=document.getElementById('addBlockTime').value.trim();
+  const title=document.getElementById('addBlockTitle').value.trim();
+  const desc=document.getElementById('addBlockDesc').value.trim();
+  const cat=document.getElementById('addBlockCat').value;
+  if(!title) return;
+  const blocks=S.get('custom_blocks_'+dateStr,[]);
+  blocks.push({t:time,time,title,desc,cat,tag:cat,custom:true});
+  S.set('custom_blocks_'+dateStr,blocks);
+  closeAddBlockModal();
+  if(curWeekStart) renderWeek();
+  sparkle();
+}
+function deleteCustomBlock(dateStr,idx){
+  const blocks=S.get('custom_blocks_'+dateStr,[]);
+  blocks.splice(idx,1);
+  S.set('custom_blocks_'+dateStr,blocks);
+  if(curWeekStart) renderWeek();
+}
+
+// ══════════════════════════════════════
+// ADD GOAL MODAL
+// ══════════════════════════════════════
+function openAddGoalModal(dateStr){
+  document.getElementById('addGoalDateStr').value=dateStr;
+  document.getElementById('addGoalText').value='';
+  document.getElementById('addGoalOverlay').classList.add('open');
+}
+function closeAddGoalModal(){ document.getElementById('addGoalOverlay').classList.remove('open'); }
+function saveCustomGoal(){
+  const dateStr=document.getElementById('addGoalDateStr').value;
+  const text=document.getElementById('addGoalText').value.trim();
+  if(!text) return;
+  const goals=S.get('custom_goals_'+dateStr,[]);
+  goals.push(text);
+  S.set('custom_goals_'+dateStr,goals);
+  closeAddGoalModal();
+  if(curWeekStart) renderWeek();
+  sparkle();
+}
+function deleteCustomGoal(dateStr,idx){
+  const goals=S.get('custom_goals_'+dateStr,[]);
+  goals.splice(idx,1);
+  S.set('custom_goals_'+dateStr,goals);
+  if(curWeekStart) renderWeek();
+}
+
+// ══════════════════════════════════════
+// CONFETTI
+// ══════════════════════════════════════
+const CONF_COLORS=['#e8a0a0','#a8c4b0','#c4b0d8','#f0c4a0','#a0c4e8','#d4b870'];
+function sparkle(){
+  const wrap=document.getElementById('confWrap');
+  for(let i=0;i<10;i++){
+    const p=document.createElement('div'); p.className='conf-p';
+    p.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${CONF_COLORS[~~(Math.random()*6)]};width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;animation-delay:${Math.random()*.3}s`;
+    wrap.appendChild(p); setTimeout(()=>p.remove(),2e3);
+  }
+}
+function burst(){ for(let i=0;i<50;i++) setTimeout(sparkle,i*40); }
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+renderCal();
+const march16=new Date(2026,2,16);
+curWeekStart=march16;
+renderWeek();
+renderCal();
+</script>
+</body>
+</html>
