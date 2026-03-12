@@ -1765,7 +1765,7 @@ function toggleVoice(){
 const savedHistory=S.get('ai_history',[]);
 if(savedHistory.length){ aiHistory=savedHistory; savedHistory.forEach(m=>addMsg(m.role,m.content)); }
 else {
-  addMsg('assistant','Hey! Tell me what to change in your schedule — move a block, delete something, add something new, or rename a block. I'll update it right away! 🗓️');
+  addMsg('assistant','Hey! Tell me what to change in your schedule — move a block, delete something, add something new, or rename a block. I will update it right away! 🗓️');
 }
 
 // ══════════════════════════════════════
