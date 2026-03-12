@@ -1896,11 +1896,18 @@ function burst(){ for(let i=0;i<50;i++) setTimeout(sparkle,i*40); }
 // ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
+// Start on calendar view, render it, then pre-load current week in background
 renderCal();
-const march16=new Date(2026,2,16);
-curWeekStart=march16;
+
+// Auto-select today's week so clicking "This Week" works immediately
+const today = new Date();
+const todayMonday = getMonday(today);
+curWeekStart = todayMonday;
 renderWeek();
-renderCal();
+
+// Stay on calendar view — don't auto-navigate away
+if(isMobile()) showMobileView('cal');
+else showDesktopView('cal');
 </script>
 </body>
 </html>
