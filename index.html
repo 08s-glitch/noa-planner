@@ -785,7 +785,7 @@ textarea, input, select { font-family:inherit; }
         <span class="nav-icon">⚙️</span> Settings
       </button>
     </nav>
-    <button class="sidebar-ai-btn" onclick="toggleAI()">✨ Open Study Helper</button>
+    <button class="sidebar-ai-btn" onclick="toggleAI()">🗓️ Edit My Schedule</button>
   </aside>
 
   <main class="desktop-main" id="dMain">
@@ -890,9 +890,12 @@ textarea, input, select { font-family:inherit; }
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <h3>Add Event ✨</h3>
-    <div class="mfield"><label>Date</label><input type="date" id="evtDate"></div>
-    <div class="mfield"><label>Event Name</label><input type="text" id="evtName" placeholder="e.g. Doctor appointment"></div>
-    <div class="mfield"><label>Time (optional)</label><input type="time" id="evtTime"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="mfield"><label>Start Date</label><input type="date" id="evtDate"></div>
+      <div class="mfield"><label>End Date <span style="font-weight:400;text-transform:none;letter-spacing:0">(for trips/breaks)</span></label><input type="date" id="evtDateEnd"></div>
+    </div>
+    <div class="mfield"><label>Event Name</label><input type="text" id="evtName" placeholder="e.g. Spring Break, Doctor appt"></div>
+    <div class="mfield"><label>Time (optional, single-day only)</label><input type="time" id="evtTime"></div>
     <div class="mfield">
       <label>Type</label>
       <select id="evtType">
@@ -911,6 +914,48 @@ textarea, input, select { font-family:inherit; }
 </div>
 
 <div class="conf-wrap" id="confWrap"></div>
+
+<!-- Add Block Modal -->
+<div class="overlay" id="addBlockOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3>Add Schedule Block ➕</h3>
+    <input type="hidden" id="addBlockDateStr">
+    <div class="mfield"><label>Time (e.g. 5:00–6:00)</label><input type="text" id="addBlockTime" placeholder="5:00–6:00"></div>
+    <div class="mfield"><label>Title</label><input type="text" id="addBlockTitle" placeholder="e.g. Piano practice"></div>
+    <div class="mfield"><label>Description (optional)</label><input type="text" id="addBlockDesc" placeholder="Optional details"></div>
+    <div class="mfield">
+      <label>Category</label>
+      <select id="addBlockCat">
+        <option value="routine">Routine</option>
+        <option value="hw">Homework</option>
+        <option value="math">Math</option>
+        <option value="free">Free Time</option>
+        <option value="wind">Wind-Down</option>
+        <option value="shabbat">Shabbat</option>
+        <option value="specialist">Specialist</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="closeAddBlockModal()">Cancel</button>
+      <button class="btn-pri" onclick="saveCustomBlock()">Add Block</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Goal Modal -->
+<div class="overlay" id="addGoalOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3>Add Goal / To-Do ⚡</h3>
+    <input type="hidden" id="addGoalDateStr">
+    <div class="mfield"><label>Goal or To-Do</label><input type="text" id="addGoalText" placeholder="e.g. Call grandma, pack for trip…" onkeydown="if(event.key==='Enter') saveCustomGoal()"></div>
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="closeAddGoalModal()">Cancel</button>
+      <button class="btn-pri" onclick="saveCustomGoal()">Add Goal</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════
@@ -1258,27 +1303,51 @@ function buildPanel(name,idx,prefix){
   }
 
   // Time blocks
-  h+=`<div class="sec-title" style="padding:4px 0 8px">🕐 Today's Schedule</div>`;
-  h+=`<div class="block-list">`;
-  sched.blocks.forEach(b=>{
-    h+=`<div class="blk cat-${b.cat}">
-      <div class="blk-time">${b.t}</div>
-      <div><div class="blk-title">${b.title}</div><div class="blk-desc">${b.desc}</div><span class="blk-tag tag-${b.tag}">${b.tag.charAt(0).toUpperCase()+b.tag.slice(1)}</span></div>
+  const customBlocks=S.get('custom_blocks_'+dateStr,[]);
+  const overrides=S.get('block_overrides_'+dateStr,{});
+  const baseBlocks=sched.blocks
+    .filter(b=>overrides[b.title]!=='DELETED')
+    .map(b=>{
+      const ov=overrides[b.title];
+      if(ov&&typeof ov==='object') return {...b,...ov};
+      return b;
+    });
+  const allBlocks=[...baseBlocks, ...customBlocks.map(cb=>({...cb,custom:true}))];
+  h+=`<div class="sec-title" style="padding:4px 0 6px;display:flex;align-items:center;justify-content:space-between">
+    <span>🕐 Today's Schedule</span>
+    <button class="sm-btn" style="font-size:.7rem;padding:4px 10px" onclick="openAddBlockModal('${dateStr}')">+ Add Block</button>
+  </div>`;
+  h+=`<div class="block-list" id="${prefix}blocks_${dateStr}">`;
+  allBlocks.forEach((b,bi)=>{
+    const delBtn=b.custom?`<button onclick="deleteCustomBlock('${dateStr}',${bi - sched.blocks.length})" style="position:absolute;top:6px;right:8px;background:none;border:none;font-size:.75rem;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:4px" title="Remove">✕</button>`:'';
+    h+=`<div class="blk cat-${b.cat||'routine'}" style="position:relative">
+      <div class="blk-time">${b.t||b.time||''}</div>
+      <div style="padding-right:${b.custom?'24px':'0'}"><div class="blk-title">${b.title}</div><div class="blk-desc">${b.desc||''}</div>${b.tag?`<span class="blk-tag tag-${b.tag}">${b.tag.charAt(0).toUpperCase()+b.tag.slice(1)}</span>`:''}</div>
+      ${delBtn}
     </div>`;
   });
   h+=`</div>`;
 
-  // Goals
+  // Goals (built-in + custom)
   const goals=getDayGoals(name);
+  const customGoals=S.get('custom_goals_'+dateStr,[]);
+  const allGoals=[...goals,...customGoals.map(g=>({text:g,custom:true}))];
   h+=`<div class="section-card">
-    <div class="sec-title">⚡ Today's Goals <span style="font-size:.7rem;color:var(--muted);font-weight:400">— check off to charge the battery!</span></div>
-    <div>`;
-  goals.forEach((g,gi)=>{
-    const key=`goals_${dateStr}_${gi}`;
+    <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>⚡ Today's Goals <span style="font-size:.7rem;color:var(--muted);font-weight:400">— check off to charge the battery!</span></span>
+      <button class="sm-btn" style="font-size:.7rem;padding:4px 10px;flex-shrink:0" onclick="openAddGoalModal('${dateStr}')">+ Add Goal</button>
+    </div>
+    <div id="${prefix}goallist_${dateStr}">`;
+  allGoals.forEach((g,gi)=>{
+    const gtext=typeof g==='string'?g:g.text;
+    const isCustom=typeof g==='object'&&g.custom;
+    const key=isCustom?`custom_goals_${dateStr}_${gi-goals.length}`:`goals_${dateStr}_${gi}`;
     const on=S.get('goalstate_'+key,false);
+    const delBtn=isCustom?`<button onclick="deleteCustomGoal('${dateStr}',${gi-goals.length})" style="background:none;border:none;font-size:.75rem;color:var(--muted);cursor:pointer;padding:2px 4px;margin-left:4px;flex-shrink:0" title="Remove">✕</button>`:'';
     h+=`<div class="goal-item">
       <div class="g-check${on?' on':''}" id="${prefix}gc_${key}" onclick="toggleGoal('${key}','${dateStr}','${prefix}')">${on?'✓':''}</div>
-      <div class="g-label${on?' done':''}" id="${prefix}gt_${key}" onclick="toggleGoal('${key}','${dateStr}','${prefix}')">${g}</div>
+      <div class="g-label${on?' done':''}" id="${prefix}gt_${key}" onclick="toggleGoal('${key}','${dateStr}','${prefix}')">${gtext}</div>
+      ${delBtn}
     </div>`;
   });
   h+=`</div></div>`;
@@ -1375,8 +1444,11 @@ function updateBattery(){
   DAY_SHORT.forEach((name,i)=>{
     const d=dayOfWeek(i); const dateStr=ds(d);
     const goals=getDayGoals(name);
-    total+=goals.length;
+    const customGoals=S.get('custom_goals_'+dateStr,[]);
+    const allGoalCount=goals.length+customGoals.length;
+    total+=allGoalCount;
     goals.forEach((_,gi)=>{ if(S.get('goalstate_goals_'+dateStr+'_'+gi,false)) done++; });
+    customGoals.forEach((_,gi)=>{ if(S.get('goalstate_custom_goals_'+dateStr+'_'+gi,false)) done++; });
     const assigns=S.get('assigns_'+dateStr,[]);
     total+=assigns.length; done+=assigns.filter(a=>a.done).length;
   });
@@ -1492,16 +1564,34 @@ function openModal(){
 }
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
 function saveEvent(){
-  const d=document.getElementById('evtDate').value;
+  const startD=document.getElementById('evtDate').value;
+  const endD=document.getElementById('evtDateEnd').value;
   const name=document.getElementById('evtName').value.trim();
   const time=document.getElementById('evtTime').value;
   const type=document.getElementById('evtType').value;
-  if(!d||!name) return;
-  const saved=S.get('custom_events',[]); saved.push({date:d,name,time,type});
+  if(!startD||!name) return;
+  const saved=S.get('custom_events',[]);
+  if(endD && endD > startD){
+    // expand range into individual days
+    let cur=new Date(startD+'T12:00:00');
+    const end=new Date(endD+'T12:00:00');
+    while(cur<=end){
+      saved.push({date:ds(cur),name,type});
+      cur.setDate(cur.getDate()+1);
+    }
+  } else {
+    saved.push({date:startD,name,time,type});
+  }
   S.set('custom_events',saved); closeModal(); renderCal();
 }
 document.getElementById('modalOverlay').addEventListener('click',e=>{
   if(e.target===document.getElementById('modalOverlay')) closeModal();
+});
+document.getElementById('addBlockOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('addBlockOverlay')) closeAddBlockModal();
+});
+document.getElementById('addGoalOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('addGoalOverlay')) closeAddGoalModal();
 });
 
 // ══════════════════════════════════════
@@ -1552,18 +1642,32 @@ async function sendAI(){
   ['aiSendBtn','aiSendBtnD'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=true; });
 
   try{
-    const sys=`You are a warm, encouraging study helper for a 7th grade girl who goes to a Jewish private school. She has anxiety and struggles with math (currently a 70). She does homework after 4:30pm, has a homework specialist on Monday and Wednesday, and Shabbat dinner every Friday 7:00-7:45pm. Lights out by 10:30pm every night.
+    const sys=`You are a schedule manager for a 7th grade girl's planner app. Your ONLY job is to manage her schedule — move blocks, delete blocks, add new blocks, or rename blocks. Nothing else.
 
 ${buildCtx()}
 
-Your job:
-- Be warm, calm, and supportive — never make her feel bad or lecture her
-- Keep responses SHORT — 2-4 sentences max unless she asks for more
-- If she wants to rearrange her schedule, describe exactly what to move where
-- If she seems stressed, remind her to breathe: in 4 counts, hold 4, out 6
-- Use occasional emojis but not excessively
-- If she asks what to do first, give her ONE specific thing to start with
-- Always end with something encouraging`;
+CRITICAL: You must ALWAYS respond with a JSON object. No plain text, no markdown, only raw JSON.
+
+JSON format:
+{
+  "message": "short confirmation of what you did (1 sentence, friendly)",
+  "actions": [
+    // MOVE: change the time of an existing block
+    {"type": "move", "day": "Mon", "blockTitle": "exact title", "newTime": "7:00–8:00"},
+    // DELETE: remove a block entirely
+    {"type": "delete", "day": "Mon", "blockTitle": "exact title"},
+    // ADD: add a new custom block
+    {"type": "add", "day": "Mon", "time": "5:00–6:00", "title": "Block title", "desc": "Optional description", "cat": "routine"},
+    // RENAME: change title/desc of a block
+    {"type": "rename", "day": "Mon", "blockTitle": "old title", "newTitle": "new title"},
+    // ADD_GOAL: add a custom goal/todo to a day
+    {"type": "add_goal", "day": "Mon", "text": "goal text here"}
+  ]
+}
+
+Cat options: math, hw, free, wind, routine, shabbat, sleep, specialist
+Day options: Mon, Tue, Wed, Thu, Fri, Sat, Sun
+If the user says something that is not a schedule request, still return JSON with empty actions array and a friendly message saying you can only help with schedule changes.`;
 
     const response=await fetch('/api/chat',{
       method:'POST',
@@ -1573,9 +1677,23 @@ Your job:
 
     const data=await response.json();
     if(data.error) throw new Error(data.error);
-    const reply=data.content?.[0]?.text||'Sorry, something went wrong — try again!';
-    aiHistory.push({role:'assistant',content:reply});
-    removeTyping(); addMsg('assistant',reply);
+    const rawText=data.content?.[0]?.text||'{"message":"Something went wrong, try again!","actions":[]}';
+    aiHistory.push({role:'assistant',content:rawText});
+
+    let parsed;
+    try {
+      const clean=rawText.replace(/```json|```/g,'').trim();
+      parsed=JSON.parse(clean);
+    } catch(e) {
+      parsed={message:rawText,actions:[]};
+    }
+
+    removeTyping();
+    addMsg('assistant', parsed.message||' ');
+
+    if(parsed.actions&&parsed.actions.length){
+      applyScheduleActions(parsed.actions);
+    }
     S.set('ai_history',aiHistory.slice(-20));
   }catch(err){
     removeTyping();
@@ -1647,7 +1765,118 @@ function toggleVoice(){
 const savedHistory=S.get('ai_history',[]);
 if(savedHistory.length){ aiHistory=savedHistory; savedHistory.forEach(m=>addMsg(m.role,m.content)); }
 else {
-  addMsg('assistant','Hey! I am your study helper 🌸 I can rearrange your schedule, tell you what is coming up, help with what to tackle first, or just give you a pep talk. Type or tap the mic!');
+  addMsg('assistant','Hey! Tell me what to change in your schedule — move a block, delete something, add something new, or rename a block. I'll update it right away! 🗓️');
+}
+
+// ══════════════════════════════════════
+// SCHEDULE ACTION APPLIER
+// ══════════════════════════════════════
+function applyScheduleActions(actions){
+  actions.forEach(a=>{
+    const dayIdx=DAY_SHORT.indexOf(a.day);
+    if(dayIdx===-1) return;
+    const d=dayOfWeek(dayIdx);
+    const dateStr=ds(d);
+
+    if(a.type==='add'){
+      const blocks=S.get('custom_blocks_'+dateStr,[]);
+      blocks.push({time:a.time,t:a.time,title:a.title,desc:a.desc||'',cat:a.cat||'routine',tag:a.cat||'routine',custom:true});
+      S.set('custom_blocks_'+dateStr,blocks);
+    }
+    else if(a.type==='delete'){
+      // Try to delete from custom blocks first
+      const cBlocks=S.get('custom_blocks_'+dateStr,[]);
+      const newC=cBlocks.filter(b=>!b.title.toLowerCase().includes(a.blockTitle.toLowerCase()));
+      S.set('custom_blocks_'+dateStr,newC);
+      // For built-in blocks, store overrides
+      const overrides=S.get('block_overrides_'+dateStr,{});
+      overrides[a.blockTitle]='DELETED';
+      S.set('block_overrides_'+dateStr,overrides);
+    }
+    else if(a.type==='move'){
+      const overrides=S.get('block_overrides_'+dateStr,{});
+      if(!overrides[a.blockTitle]||overrides[a.blockTitle]==='DELETED') overrides[a.blockTitle]={};
+      if(typeof overrides[a.blockTitle]==='object') overrides[a.blockTitle].time=a.newTime;
+      S.set('block_overrides_'+dateStr,overrides);
+      // Also move custom blocks
+      const cBlocks=S.get('custom_blocks_'+dateStr,[]);
+      cBlocks.forEach(b=>{ if(b.title.toLowerCase().includes(a.blockTitle.toLowerCase())){ b.t=a.newTime; b.time=a.newTime; } });
+      S.set('custom_blocks_'+dateStr,cBlocks);
+    }
+    else if(a.type==='rename'){
+      const overrides=S.get('block_overrides_'+dateStr,{});
+      if(!overrides[a.blockTitle]||overrides[a.blockTitle]==='DELETED') overrides[a.blockTitle]={};
+      if(typeof overrides[a.blockTitle]==='object') overrides[a.blockTitle].title=a.newTitle;
+      S.set('block_overrides_'+dateStr,overrides);
+    }
+    else if(a.type==='add_goal'){
+      const goals=S.get('custom_goals_'+dateStr,[]);
+      goals.push(a.text);
+      S.set('custom_goals_'+dateStr,goals);
+    }
+  });
+  // Re-render week
+  if(curWeekStart) renderWeek();
+}
+
+// ══════════════════════════════════════
+// ADD BLOCK MODAL
+// ══════════════════════════════════════
+function openAddBlockModal(dateStr){
+  document.getElementById('addBlockDateStr').value=dateStr;
+  document.getElementById('addBlockTime').value='';
+  document.getElementById('addBlockTitle').value='';
+  document.getElementById('addBlockDesc').value='';
+  document.getElementById('addBlockCat').value='routine';
+  document.getElementById('addBlockOverlay').classList.add('open');
+}
+function closeAddBlockModal(){ document.getElementById('addBlockOverlay').classList.remove('open'); }
+function saveCustomBlock(){
+  const dateStr=document.getElementById('addBlockDateStr').value;
+  const time=document.getElementById('addBlockTime').value.trim();
+  const title=document.getElementById('addBlockTitle').value.trim();
+  const desc=document.getElementById('addBlockDesc').value.trim();
+  const cat=document.getElementById('addBlockCat').value;
+  if(!title) return;
+  const blocks=S.get('custom_blocks_'+dateStr,[]);
+  blocks.push({t:time,time,title,desc,cat,tag:cat,custom:true});
+  S.set('custom_blocks_'+dateStr,blocks);
+  closeAddBlockModal();
+  if(curWeekStart) renderWeek();
+  sparkle();
+}
+function deleteCustomBlock(dateStr,idx){
+  const blocks=S.get('custom_blocks_'+dateStr,[]);
+  blocks.splice(idx,1);
+  S.set('custom_blocks_'+dateStr,blocks);
+  if(curWeekStart) renderWeek();
+}
+
+// ══════════════════════════════════════
+// ADD GOAL MODAL
+// ══════════════════════════════════════
+function openAddGoalModal(dateStr){
+  document.getElementById('addGoalDateStr').value=dateStr;
+  document.getElementById('addGoalText').value='';
+  document.getElementById('addGoalOverlay').classList.add('open');
+}
+function closeAddGoalModal(){ document.getElementById('addGoalOverlay').classList.remove('open'); }
+function saveCustomGoal(){
+  const dateStr=document.getElementById('addGoalDateStr').value;
+  const text=document.getElementById('addGoalText').value.trim();
+  if(!text) return;
+  const goals=S.get('custom_goals_'+dateStr,[]);
+  goals.push(text);
+  S.set('custom_goals_'+dateStr,goals);
+  closeAddGoalModal();
+  if(curWeekStart) renderWeek();
+  sparkle();
+}
+function deleteCustomGoal(dateStr,idx){
+  const goals=S.get('custom_goals_'+dateStr,[]);
+  goals.splice(idx,1);
+  S.set('custom_goals_'+dateStr,goals);
+  if(curWeekStart) renderWeek();
 }
 
 // ══════════════════════════════════════
